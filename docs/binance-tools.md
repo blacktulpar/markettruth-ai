@@ -1,79 +1,82 @@
 # Binance Agent OS / MCP tool inventory
 
-This inventory is being populated from a live Codex + Binance MCP session.
+Live discovery performed through Codex against the connected Binance Agent OS MCP server.
 
-## Confirmed tools
+## Verified live call
 
-### `binance.spot.ticker24hr`
+### `spot.ticker24hr`
 
-**Purpose:** Spot 24 hour ticker statistics for a symbol.
+Used successfully for `BTCUSDT`.
 
-**Confirmed input used:**
+Verified response fields include:
 
-```json
-{
-  "symbol": "BTCUSDT",
-  "type": "FULL"
-}
-```
+`symbol`, `lastPrice`, `priceChange`, `priceChangePercent`, `weightedAvgPrice`, `prevClosePrice`, `lastQty`, `bidPrice`, `bidQty`, `askPrice`, `askQty`, `openPrice`, `highPrice`, `lowPrice`, `volume`, `quoteVolume`, `openTime`, `closeTime`, `firstId`, `lastId`, `count`.
 
-**Observed returned fields:**
+## Core tools selected for Market Move Autopsy
 
-- `symbol`
-- `priceChange`
-- `priceChangePercent`
-- `weightedAvgPrice`
-- `prevClosePrice`
-- `lastPrice`
-- `lastQty`
-- `bidPrice`
-- `bidQty`
-- `askPrice`
-- `askQty`
-- `openPrice`
-- `highPrice`
-- `lowPrice`
-- `volume`
-- `quoteVolume`
-- `openTime`
-- `closeTime`
-- `firstId`
-- `lastId`
-- `count`
+### Spot / market structure
 
-**MarketTruth specialist:** Spot / Market Structure Agent
+| Tool | Required | Useful optional | Role |
+| --- | --- | --- | --- |
+| `spot.ticker24hr` | `symbol` or `symbols` | `type`, `symbolStatus` | 24h price, volume and change context |
+| `spot.klines` | `symbol`, `interval` | `startTime`, `endTime`, `limit`, `timeZone` | Trend, volatility and candle structure |
+| `spot.depth` | `symbol` | `limit`, `symbolStatus` | Order book depth and imbalance |
+| `spot.getTrades` | `symbol` | `limit` | Recent executed trades |
+| `spot.aggTrades` | `symbol` | `startTime`, `endTime`, `limit`, `fromId` | Aggregated taker activity |
+| `spot.tickerBookTicker` | none | `symbol`, `symbols`, `symbolStatus` | Best bid/ask and spread |
 
-**Live validation:** Successfully called through Binance MCP from Codex in read-only mode.
+Spot candles/trades are capped at 1,000 rows. Depth supports up to 5,000 levels.
 
-## Tool discovery still required
+### USDⓈ-M derivatives
 
-For each useful tool record:
+| Tool | Required | Useful optional | Role |
+| --- | --- | --- | --- |
+| `futures_usds.markPrice` | none | `symbol` | Mark price and current funding context |
+| `futures_usds.getFundingRateHistory` | none | `symbol`, `startTime`, `endTime`, `limit` | Funding trend |
+| `futures_usds.openInterest` | `symbol` | none | Current open interest |
+| `futures_usds.openInterestStatistics` | `symbol`, `period` | `startTime`, `endTime`, `limit` | OI expansion/contraction history |
+| `futures_usds.longShortRatio` | `symbol`, `period` | `startTime`, `endTime`, `limit` | Overall positioning |
+| `futures_usds.topTraderLongShortRatioAccounts` | `symbol`, `period` | `startTime`, `endTime`, `limit` | Top-trader account positioning |
+| `futures_usds.topTraderLongShortRatioPositions` | `symbol`, `period` | `startTime`, `endTime`, `limit` | Top-trader position positioning |
+| `futures_usds.takerBuySellVolume` | `symbol`, `period` | `startTime`, `endTime`, `limit` | Aggressive buy/sell flow |
+| `futures_usds.basis` | `pair`, `contractType`, `period` | `startTime`, `endTime`, `limit` | Futures premium/discount |
+| `futures_usds.klineCandlestickData` | `symbol`, `interval` | `startTime`, `endTime`, `limit` | Futures price structure |
+| `futures_usds.markPriceKlineCandlestickData` | `symbol`, `interval` | `startTime`, `endTime`, `limit` | Mark-price structure |
+| `futures_usds.premiumIndexKlineData` | `symbol`, `interval` | `startTime`, `endTime`, `limit` | Premium-index history |
+| `futures_usds.orderBook` | `symbol` | `limit` | Futures liquidity |
+| `futures_usds.recentTradesList` | `symbol` | `limit` | Recent futures trades |
+| `futures_usds.tradingSchedule` | none | none | TradFi underlying market-session schedules |
 
-- exact tool name
-- purpose
-- required parameters
-- optional parameters
-- output shape
-- which MarketTruth specialist uses it
+`period` supports `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `6h`, `12h`, `1d` on the statistical endpoints. Ratio, taker-volume and basis history is limited to roughly the latest 30 days; OI statistics roughly the latest month.
 
-### Minimum data for Market Move Autopsy
+## Useful secondary context
 
-- candlesticks / klines
-- order book depth
-- recent trades or taker flow if available
-- funding rate
-- open interest
-- long / short ratios
-- taker buy / sell metrics
-- liquidation data
-- basis or futures premium
-- any relevant onchain signals exposed through the connected Agent OS environment
+- `futures_usds.adlRisk` — ADL risk rating; **not** a public liquidation-event feed.
+- `analysis.getTokenAiReport` — Binance AI-written token research; useful as secondary context but explicitly not guaranteed real-time.
+- `spot.exchangeInfo` and `futures_usds.exchangeInformation` — instrument and trading-rule metadata.
+- `wallet.getOpenSymbolList` — symbols scheduled to open for trading.
+- `wallet.getSymbolsDelistScheduleForSpot` — spot delisting schedule.
+- `wallet.systemStatus` — Binance system status.
 
-### Minimum data for Cross-Market Reality Check
+## Important gaps in the currently exposed MCP catalog
 
-- tokenized security metadata and price
-- underlying stock price
-- shares multiplier if exposed
-- market open / closed status
-- corporate actions / earnings / dividend information if exposed
-- TradFi derivative or perpetual pricing if exposed
+The live discovery found **no dedicated public tools** for:
+
+- market-wide liquidation events / force-order stream
+- independently verified underlying-stock quotes
+- corporate-action calendar / split / merger / ex-dividend feed
+- raw onchain wallet flows, whale transfers, holder distribution or DEX liquidity
+
+Personal `usersForceOrders` tools exist, but those represent the authenticated user's own liquidations and must not be treated as market-wide evidence.
+
+Tokenized securities can use existing `spot.*` market tools when listed there, but the MCP catalog did not expose a dedicated bStock mapping or valuation schema.
+
+## Architecture implication
+
+The **MVP core** should be strongest where Agent OS MCP is strongest:
+
+1. Spot / Market Structure Agent
+2. Derivatives / Positioning Agent
+3. Truth / Synthesis Agent
+
+Cross-market RWA and onchain context should be added through Binance Skills Hub / Web3 APIs only after the core investigation works end-to-end. Missing evidence must never be invented or silently substituted.
