@@ -57,7 +57,7 @@ Run tests:
 
 ```powershell
 python -m pip install -e ".[dev]"
-pytest
+python -m pytest -q
 ```
 
 Run the deterministic analyzer on a normalized live snapshot:
@@ -92,11 +92,17 @@ Truth / Synthesis Agent
 Classification + trap risk + evidence
 ```
 
+## First live validation
+
+The first end-to-end BTCUSDT run completed successfully using **10/10 read-only Binance MCP calls**. The live market happened to be mixed rather than strongly directional, which produced a useful real-world result: top-trader positions were strongly long while taker flow was sell-dominant. MarketTruth now surfaces this type of cross-signal disagreement explicitly instead of averaging it away.
+
 ## Status
 
 - Binance MCP connected and live `BTCUSDT` ticker call verified
 - MCP tool inventory completed
 - deterministic Market Move Autopsy engine implemented
 - CLI implemented
-- classification tests added
-- next milestone: generate the first normalized live BTCUSDT snapshot entirely from Binance MCP and run the end-to-end report
+- classification and conflict-detection tests added
+- first normalized live BTCUSDT snapshot generated entirely from Binance MCP
+- first end-to-end live report completed with all 10 required MCP calls succeeding
+- next milestone: improve demo presentation and add the second investigation mode if time permits
