@@ -2,7 +2,7 @@
 
 **One question. Multiple specialist agents. One evidence-based verdict.**
 
-MarketTruth AI is a multi-agent market investigation prototype built for the Binance Agent OS hackathon.
+MarketTruth AI is a read-only multi-agent market investigation prototype built for the Binance Agent OS hackathon.
 
 ## Investigation modes
 
@@ -19,20 +19,20 @@ Investigate tokenized US stock pricing by correcting for the token-to-share mult
 - **Cross Market / PriceTruth Agent**
 - **Truth / Synthesis Agent**
 
-The agents may disagree. Disagreement is surfaced explicitly rather than hidden inside one opaque score.
+Specialist disagreement is surfaced explicitly instead of being averaged away.
 
 ## Why this is different
 
-MarketTruth does not stop at price direction or a generic buy/sell signal. It investigates what kind of evidence is driving a move, whether specialist signals disagree, and whether an apparent cross-market price gap may actually be caused by multiplier adjustments, market sessions, stale references or corporate actions.
+MarketTruth does not stop at price direction or a generic buy/sell signal. It investigates what evidence is driving a move, whether specialist signals conflict, and whether an apparent cross-market gap may actually be caused by multiplier adjustments, market sessions, stale references or corporate actions.
 
 ## Binance Agent OS sources
 
 The project uses two official parts of the Binance Agent OS ecosystem:
 
-- **Binance MCP** for live spot and USDⓈ-M derivatives evidence
+- **Binance MCP** for spot and USDⓈ-M derivatives evidence
 - **Binance Skills Hub** for the tokenized-securities workflow used by Cross Market Reality Check
 
-The prototype is read only. It does not require trading, transfer, margin, loan or order-placement permissions.
+No order placement, transfers, margin actions, loans or fund movement are required by the MVP.
 
 ## Market Move Autopsy evidence
 
@@ -51,14 +51,14 @@ USDⓈ-M derivatives:
 - taker buy/sell volume
 - perpetual basis
 
-The connected MCP catalog currently does not expose a public market-wide liquidation stream, so MarketTruth never claims a confirmed liquidation cascade from unavailable data.
+The connected MCP catalog does not expose a public market-wide liquidation stream, so MarketTruth never claims a confirmed liquidation cascade from unavailable evidence.
 
 ## Cross Market Reality Check evidence
 
-The Binance tokenized-securities skill can provide:
+The official Binance tokenized-securities skill can provide:
 
 - token symbol, chain and contract mapping
-- onchain token price
+- token price
 - shares multiplier
 - underlying US stock price when available
 - market and per-asset trading status
@@ -66,7 +66,7 @@ The Binance tokenized-securities skill can provide:
 - holder count and token market cap
 - P/E, dividend yield and 52-week range
 
-A critical rule is applied before any price comparison:
+Before any cross-market price comparison:
 
 ```text
 reference_price = token_price / shares_multiplier
@@ -77,31 +77,18 @@ The project never labels a visible gap as arbitrage from price difference alone.
 ## Quick start
 
 ```powershell
-python -m pip install -e .
-```
-
-Run tests:
-
-```powershell
-python -m pip install -e ".[dev]"
+python -m pip install -e ".[dev,demo]"
 python -m pytest -q
-```
-
-## Demo dashboard
-
-Install the optional demo dependency:
-
-```powershell
-python -m pip install -e ".[demo]"
-```
-
-Start the local dashboard:
-
-```powershell
 python -m streamlit run streamlit_app.py
 ```
 
-The sidebar provides the investigation-mode menu and normalized-snapshot input. The dashboard itself never places orders or moves funds.
+The sidebar switches between both investigation modes and accepts normalized JSON snapshots.
+
+## Public demo behavior
+
+Local live snapshots under `data/live/` are intentionally excluded from GitHub. The dashboard automatically prefers local live snapshots when present; otherwise it falls back to the validated example snapshots under `data/examples/` so a public deployment opens with reproducible demo data.
+
+Deployment dependencies are provided in `requirements.txt`, and Streamlit theme settings are in `.streamlit/config.toml`.
 
 ## Live workflows
 
@@ -140,30 +127,31 @@ Cross Market Reality Check collection procedure:
     Classification + risk + evidence
 ```
 
-## Live validation
+## Validated live runs
 
 ### BTCUSDT Market Move Autopsy
 
-The first end-to-end BTCUSDT run completed successfully using **10/10 read-only Binance MCP calls**. The live market happened to be mixed rather than strongly directional, which produced a useful real-world result: top-trader positions were strongly long while taker flow was sell-dominant. MarketTruth surfaced that disagreement explicitly instead of averaging it away.
+The first end-to-end BTCUSDT run completed with **10/10 read-only Binance MCP calls succeeding**. The live snapshot produced a useful disagreement: top-trader positioning favored longs while taker flow was sell-dominant. MarketTruth surfaced this as `CONFLICT DETECTED` and classified the overall state as `MIXED_OR_INCONCLUSIVE` with **85/100 Truth confidence** and **15/100 Trap Risk**.
 
 ### NVDA Cross Market Reality Check
 
-The first live NVDA run completed successfully through the official Binance tokenized-securities skill and its documented public Binance APIs, with no failed calls and no raw API responses saved.
+The first NVDA run completed successfully through the official Binance tokenized-securities skill and documented public Binance APIs.
 
-Observed live evidence included a token price of **$231.7608**, shares multiplier **1.000932**, multiplier-adjusted reference price **$231.5450**, underlying stock price **$231.4450**, and an adjusted gap of only **+0.043%**. The deterministic classifier returned **NORMAL_TRACKING_RANGE** with **86/100 confidence** and **10/100 misread risk**.
+Observed evidence included:
 
-The run also exposed an important cross-market nuance: the asset permitted off-hours trading while the overall market status was closed, and quote timestamps were unavailable. MarketTruth therefore preserved the small-gap classification but explicitly avoided presenting the gap as executable arbitrage.
+- token price **$231.7608**
+- shares multiplier **1.000932**
+- multiplier-adjusted reference **$231.5450**
+- underlying stock price **$231.4450**
+- adjusted gap **+0.043%**
 
-## Status
+MarketTruth returned `NORMAL_TRACKING_RANGE` with **86/100 confidence**. Because the tokenized asset was in an off-hours session, the corrected **Misread Risk is 30/100**, and the report explicitly warns that closed-session timing can make token and underlying references update asynchronously.
 
-- Binance MCP connected and live BTCUSDT workflow verified
-- 10/10 required Market Move Autopsy MCP calls succeeded in the first live run
-- deterministic Market Move Autopsy engine implemented
-- conflict detection and classification tests implemented
-- Streamlit dashboard implemented
-- sidebar investigation-mode menu implemented
-- deterministic Cross Market Reality Check engine implemented
-- official Binance tokenized-securities skill installed and verified locally
-- first live NVDA Cross Market Reality Check completed successfully
-- all 10 tests passed before the first live NVDA validation
-- next milestone: validate the second mode visually in the Streamlit dashboard and polish the demo flow
+## Validation status
+
+- both investigation modes implemented
+- first live BTCUSDT and NVDA workflows verified
+- **11 tests passing**
+- Streamlit AppTest passing for both modes
+- validated example snapshots reproduce the live conclusions
+- no raw live MCP/API responses committed
