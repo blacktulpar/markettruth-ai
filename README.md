@@ -74,6 +74,22 @@ python -m markettruth.cli data/live/BTCUSDT.json
 
 The live Binance MCP collection procedure is documented in `prompts/market_move_autopsy.md`.
 
+## Demo dashboard
+
+Install the optional demo dependency:
+
+```powershell
+python -m pip install -e ".[demo]"
+```
+
+After generating a normalized live snapshot through Binance MCP, start the local dashboard:
+
+```powershell
+streamlit run streamlit_app.py
+```
+
+The dashboard displays the specialist biases, Truth Agent classification, confidence, trap risk, conflicts, evidence and evidence limits. It does not fetch market data itself, so the demo keeps the Binance Agent OS collection step visibly separate from deterministic analysis and presentation.
+
 ## Architecture
 
 ```text
@@ -105,4 +121,5 @@ The first end-to-end BTCUSDT run completed successfully using **10/10 read-only 
 - classification and conflict-detection tests added
 - first normalized live BTCUSDT snapshot generated entirely from Binance MCP
 - first end-to-end live report completed with all 10 required MCP calls succeeding
-- next milestone: improve demo presentation and add the second investigation mode if time permits
+- Streamlit demo dashboard added
+- next milestone: validate the dashboard locally, then add the second investigation mode if time permits
