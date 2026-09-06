@@ -1,0 +1,16 @@
+{
+  "symbol": "BTCUSDT",
+  "price_change_24h": -0.30,
+  "price_change_1h": -0.02,
+  "price_change_4h": -0.12,
+  "quote_volume_24h": 740169673,
+  "orderbook_imbalance": 1.07,
+  "funding_rate": 0.000046,
+  "oi_change_1h": -0.04,
+  "oi_change_4h": -0.40,
+  "long_short_ratio": 1.05,
+  "top_trader_position_ratio": 2.01,
+  "taker_buy_sell_ratio": 0.80,
+  "basis_pct": -0.028,
+  "data_timestamp": "2026-09-06T17:41:49Z"
+}
