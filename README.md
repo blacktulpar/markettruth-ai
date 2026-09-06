@@ -4,31 +4,37 @@
 
 MarketTruth AI is a multi-agent market investigation prototype built for the Binance Agent OS hackathon.
 
-## MVP scope
+## Investigation modes
 
 ### 1. Market Move Autopsy
-Explain *why* an asset is moving by comparing spot market structure with derivatives positioning.
+Explain *why* a crypto asset is moving by comparing spot market structure with derivatives positioning.
 
-### 2. Cross-Market Reality Check
-Planned second mode for tokenized / TradFi-linked assets once the core live workflow is complete.
+### 2. Cross Market Reality Check
+Investigate tokenized US stock pricing by correcting for the token-to-share multiplier, comparing the adjusted token reference with the underlying stock when available, and checking market-session or corporate-action context.
 
 ## Specialist roles
 
 - **Spot / Market Structure Agent**
-- **Derivatives Agent**
+- **Derivatives / Positioning Agent**
+- **Cross Market / PriceTruth Agent**
 - **Truth / Synthesis Agent**
 
 The agents may disagree. Disagreement is surfaced explicitly rather than hidden inside one opaque score.
 
 ## Why this is different
 
-MarketTruth does not stop at price direction or a generic buy/sell signal. It investigates whether a move is spot-led, leverage-driven, consistent with short covering / long unwinding, or simply inconclusive based on the evidence Binance Agent OS actually exposes.
+MarketTruth does not stop at price direction or a generic buy/sell signal. It investigates what kind of evidence is driving a move, whether specialist signals disagree, and whether an apparent cross-market price gap may actually be caused by multiplier adjustments, market sessions, stale references or corporate actions.
 
-## Data source
+## Binance Agent OS sources
 
-Live market evidence comes through **Binance Agent OS / Binance MCP**. The MVP is read-only and does not require trading, transfer, margin, loan or order-placement permissions.
+The project uses two official parts of the Binance Agent OS ecosystem:
 
-## Current live evidence set
+- **Binance MCP** for live spot and USDⓈ-M derivatives evidence
+- **Binance Skills Hub** for the tokenized-securities workflow used by Cross Market Reality Check
+
+The prototype is read only. It does not require trading, transfer, margin, loan or order-placement permissions.
+
+## Market Move Autopsy evidence
 
 Spot:
 
@@ -47,6 +53,27 @@ USDⓈ-M derivatives:
 
 The connected MCP catalog currently does not expose a public market-wide liquidation stream, so MarketTruth never claims a confirmed liquidation cascade from unavailable data.
 
+## Cross Market Reality Check evidence
+
+The Binance tokenized-securities skill can provide:
+
+- token symbol, chain and contract mapping
+- onchain token price
+- shares multiplier
+- underlying US stock price when available
+- market and per-asset trading status
+- corporate-action reason codes
+- holder count and token market cap
+- P/E, dividend yield and 52-week range
+
+A critical rule is applied before any price comparison:
+
+```text
+reference_price = token_price / shares_multiplier
+```
+
+The project never labels a visible gap as arbitrage from price difference alone.
+
 ## Quick start
 
 ```powershell
@@ -60,20 +87,6 @@ python -m pip install -e ".[dev]"
 python -m pytest -q
 ```
 
-Run the deterministic analyzer on a normalized live snapshot:
-
-```powershell
-markettruth data/live/BTCUSDT.json
-```
-
-or:
-
-```powershell
-python -m markettruth.cli data/live/BTCUSDT.json
-```
-
-The live Binance MCP collection procedure is documented in `prompts/market_move_autopsy.md`.
-
 ## Demo dashboard
 
 Install the optional demo dependency:
@@ -82,44 +95,63 @@ Install the optional demo dependency:
 python -m pip install -e ".[demo]"
 ```
 
-After generating a normalized live snapshot through Binance MCP, start the local dashboard:
+Start the local dashboard:
 
 ```powershell
-streamlit run streamlit_app.py
+python -m streamlit run streamlit_app.py
 ```
 
-The dashboard displays the specialist biases, Truth Agent classification, confidence, trap risk, conflicts, evidence and evidence limits. It does not fetch market data itself, so the demo keeps the Binance Agent OS collection step visibly separate from deterministic analysis and presentation.
+The sidebar provides the investigation-mode menu and normalized-snapshot input. The dashboard itself never places orders or moves funds.
+
+## Live workflows
+
+Market Move Autopsy collection procedure:
+
+`prompts/market_move_autopsy.md`
+
+Cross Market Reality Check collection procedure:
+
+`prompts/cross_market_reality_check.md`
 
 ## Architecture
 
 ```text
-User question
-    |
-    v
-Orchestrator / Codex
-    |
-    +--> Spot / Market Structure Agent
-    +--> Derivatives Agent
-    |
-    v
-Truth / Synthesis Agent
-    |
-    v
-Classification + trap risk + evidence
+                         User question
+                              |
+                              v
+                       Orchestrator / Codex
+                              |
+              +---------------+---------------+
+              |                               |
+              v                               v
+      Market Move Autopsy            Cross Market Reality Check
+              |                               |
+      +-------+-------+                 PriceTruth analysis
+      |               |                       |
+      v               v                       v
+ Spot specialist  Derivatives specialist  Session / event context
+      |               |                       |
+      +-------+-------+-----------------------+
+              |
+              v
+        Truth / Synthesis
+              |
+              v
+    Classification + risk + evidence
 ```
 
 ## First live validation
 
-The first end-to-end BTCUSDT run completed successfully using **10/10 read-only Binance MCP calls**. The live market happened to be mixed rather than strongly directional, which produced a useful real-world result: top-trader positions were strongly long while taker flow was sell-dominant. MarketTruth now surfaces this type of cross-signal disagreement explicitly instead of averaging it away.
+The first end-to-end BTCUSDT run completed successfully using **10/10 read-only Binance MCP calls**. The live market happened to be mixed rather than strongly directional, which produced a useful real-world result: top-trader positions were strongly long while taker flow was sell-dominant. MarketTruth surfaced that disagreement explicitly instead of averaging it away.
 
 ## Status
 
-- Binance MCP connected and live `BTCUSDT` ticker call verified
-- MCP tool inventory completed
+- Binance MCP connected and live BTCUSDT workflow verified
+- 10/10 required Market Move Autopsy MCP calls succeeded in the first live run
 - deterministic Market Move Autopsy engine implemented
-- CLI implemented
-- classification and conflict-detection tests added
-- first normalized live BTCUSDT snapshot generated entirely from Binance MCP
-- first end-to-end live report completed with all 10 required MCP calls succeeding
-- Streamlit demo dashboard added
-- next milestone: validate the dashboard locally, then add the second investigation mode if time permits
+- conflict detection and classification tests implemented
+- Streamlit dashboard implemented
+- sidebar investigation-mode menu implemented
+- deterministic Cross Market Reality Check engine implemented
+- Binance tokenized-securities Skills workflow documented
+- next milestone: install Binance Skills Hub locally and validate the first live Cross Market Reality Check snapshot
