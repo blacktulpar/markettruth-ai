@@ -60,3 +60,24 @@ def test_short_covering_signature_is_not_called_confirmed_squeeze() -> None:
 
     assert result.truth.classification == "SHORT_COVERING_SIGNATURE"
     assert any("No public liquidation-event feed" in warning for warning in result.truth.warnings)
+
+
+def test_top_trader_vs_taker_flow_conflict_is_surfaced() -> None:
+    snapshot = MarketSnapshot(
+        symbol="BTCUSDT",
+        price_change_1h=-0.02,
+        price_change_4h=-0.12,
+        orderbook_imbalance=1.07,
+        funding_rate=0.000046,
+        oi_change_1h=-0.04,
+        oi_change_4h=-0.40,
+        long_short_ratio=1.05,
+        top_trader_position_ratio=2.01,
+        taker_buy_sell_ratio=0.80,
+        basis_pct=-0.028,
+    )
+
+    result = analyze_snapshot(snapshot)
+
+    assert result.truth.classification == "MIXED_OR_INCONCLUSIVE"
+    assert any("Top-trader positions favor longs" in item for item in result.truth.conflicts)
