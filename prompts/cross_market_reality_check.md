@@ -27,8 +27,8 @@ For a ticker such as `NVDA`:
 
 1. Use the Token Symbol List workflow to resolve an official tokenized security deployment, including ticker, token symbol, chainId, contractAddress and multiplier.
 2. Use RWA Dynamic V2 for token price, sharesMultiplier, holders, token market cap and underlying US stock fundamentals.
-3. Use Asset Market Status for open state, session, reason code, reason message and next open/close context.
-4. If useful, use overall Market Status as secondary session context.
+3. Use Asset Market Status for open state, asset/session status, reason code, reason message and next open/close context.
+4. Use overall Market Status as secondary session context and preserve it separately from the asset-specific status.
 5. Do not treat `tokenInfo.volume24h` as onchain DEX volume. The skill documentation explicitly warns that this field reflects US stock trading volume in USD.
 
 ## Normalize into one snapshot
@@ -48,6 +48,7 @@ Create `data/live/<TICKER>_cross_market.json` with this exact shape:
   "total_holders": null,
   "token_market_cap": null,
   "market_status": null,
+  "overall_market_status": null,
   "open_state": null,
   "reason_code": null,
   "reason_msg": null,
@@ -60,6 +61,8 @@ Create `data/live/<TICKER>_cross_market.json` with this exact shape:
   "data_timestamp": null
 }
 ```
+
+`market_status` is the asset/tokenized-security session status returned by Asset Market Status. `overall_market_status` is the separate overall US market/session status when the skill exposes it. Do not overwrite one with the other.
 
 ## Critical normalization rule
 
@@ -92,4 +95,4 @@ Use `markettruth.cross_market.analyze_cross_market` on the normalized snapshot. 
 - UNDERLYING_REFERENCE_UNAVAILABLE
 - MULTIPLIER_UNAVAILABLE
 
-The final explanation must distinguish an observed gap from an actionable arbitrage opportunity.
+The final explanation must distinguish an observed gap from an actionable arbitrage opportunity. Off-hours, after-hours, overnight or closed-market states must increase synchronization / misread risk even when the adjusted price gap itself is small.
