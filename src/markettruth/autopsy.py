@@ -189,6 +189,8 @@ def synthesize(snapshot: MarketSnapshot, spot: SpecialistResult, derivatives: Sp
     down = p1 <= -0.50 or p4 <= -1.00
     oi_expanding = oi1 >= 2.0 or oi4 >= 5.0
     oi_contracting = oi1 <= -2.0 or oi4 <= -5.0
+    spot_book_confirms_up = snapshot.orderbook_imbalance is None or snapshot.orderbook_imbalance >= 0.95
+    spot_book_confirms_down = snapshot.orderbook_imbalance is None or snapshot.orderbook_imbalance <= 1.05
 
     conflicts: list[str] = []
     if spot.bias == "bullish" and derivatives.bias == "bearish":
@@ -206,6 +208,12 @@ def synthesize(snapshot: MarketSnapshot, spot: SpecialistResult, derivatives: Sp
         classification = "LONG_UNWINDING_SIGNATURE"
         summary = "Price is falling while open interest contracts, consistent with long unwinding rather than confirmed fresh short buildup."
         warnings.append("No public liquidation-event feed is available, so forced-liquidation causality is not claimed")
+    elif up and oi_expanding and not spot_book_confirms_up:
+        classification = "LEVERAGE_DRIVEN_BREAKOUT"
+        summary = "Price and open interest are rising, but near-book spot liquidity does not confirm the move, pointing to a leverage-led breakout."
+    elif down and oi_expanding and not spot_book_confirms_down:
+        classification = "LEVERAGE_DRIVEN_SELL_OFF"
+        summary = "Price and open interest are falling/rising in leverage terms, but near-book spot liquidity does not confirm the move, pointing to a leverage-led sell-off."
     elif up and oi_expanding and spot.bias not in {"bullish"}:
         classification = "LEVERAGE_DRIVEN_BREAKOUT"
         summary = "Price is rising and leverage is expanding faster than spot structure confirms."
