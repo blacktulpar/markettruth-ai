@@ -198,6 +198,14 @@ def synthesize(snapshot: MarketSnapshot, spot: SpecialistResult, derivatives: Sp
     elif spot.bias == "bearish" and derivatives.bias == "bullish":
         conflicts.append("Spot structure is bearish while derivatives positioning is bullish")
 
+    top = snapshot.top_trader_position_ratio
+    taker = snapshot.taker_buy_sell_ratio
+    if top is not None and taker is not None:
+        if top >= 1.20 and taker <= 0.92:
+            conflicts.append("Top-trader positions favor longs while taker flow is sell-dominant")
+        elif top <= 0.80 and taker >= 1.08:
+            conflicts.append("Top-trader positions favor shorts while taker flow is buy-dominant")
+
     warnings = [*spot.warnings, *derivatives.warnings]
 
     if up and oi_contracting:
