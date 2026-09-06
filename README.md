@@ -140,9 +140,19 @@ Cross Market Reality Check collection procedure:
     Classification + risk + evidence
 ```
 
-## First live validation
+## Live validation
+
+### BTCUSDT Market Move Autopsy
 
 The first end-to-end BTCUSDT run completed successfully using **10/10 read-only Binance MCP calls**. The live market happened to be mixed rather than strongly directional, which produced a useful real-world result: top-trader positions were strongly long while taker flow was sell-dominant. MarketTruth surfaced that disagreement explicitly instead of averaging it away.
+
+### NVDA Cross Market Reality Check
+
+The first live NVDA run completed successfully through the official Binance tokenized-securities skill and its documented public Binance APIs, with no failed calls and no raw API responses saved.
+
+Observed live evidence included a token price of **$231.7608**, shares multiplier **1.000932**, multiplier-adjusted reference price **$231.5450**, underlying stock price **$231.4450**, and an adjusted gap of only **+0.043%**. The deterministic classifier returned **NORMAL_TRACKING_RANGE** with **86/100 confidence** and **10/100 misread risk**.
+
+The run also exposed an important cross-market nuance: the asset permitted off-hours trading while the overall market status was closed, and quote timestamps were unavailable. MarketTruth therefore preserved the small-gap classification but explicitly avoided presenting the gap as executable arbitrage.
 
 ## Status
 
@@ -153,5 +163,7 @@ The first end-to-end BTCUSDT run completed successfully using **10/10 read-only 
 - Streamlit dashboard implemented
 - sidebar investigation-mode menu implemented
 - deterministic Cross Market Reality Check engine implemented
-- Binance tokenized-securities Skills workflow documented
-- next milestone: install Binance Skills Hub locally and validate the first live Cross Market Reality Check snapshot
+- official Binance tokenized-securities skill installed and verified locally
+- first live NVDA Cross Market Reality Check completed successfully
+- all 10 tests passed before the first live NVDA validation
+- next milestone: validate the second mode visually in the Streamlit dashboard and polish the demo flow
