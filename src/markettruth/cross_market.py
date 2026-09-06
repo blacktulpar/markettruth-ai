@@ -17,6 +17,7 @@ class CrossMarketSnapshot:
     total_holders: int | None = None
     token_market_cap: float | None = None
     market_status: str | None = None
+    overall_market_status: str | None = None
     open_state: bool | None = None
     reason_code: str | None = None
     reason_msg: str | None = None
@@ -74,11 +75,13 @@ def analyze_cross_market(snapshot: CrossMarketSnapshot) -> CrossMarketResult:
         warnings.append("Underlying stock price unavailable in the current source response")
 
     if snapshot.market_status:
-        evidence.append(f"Market session {snapshot.market_status}")
+        evidence.append(f"Tokenized asset session {snapshot.market_status}")
+    if snapshot.overall_market_status:
+        evidence.append(f"Overall US market status {snapshot.overall_market_status}")
     if snapshot.reason_code:
-        evidence.append(f"Status reason {snapshot.reason_code}")
+        evidence.append(f"Asset status reason {snapshot.reason_code}")
     if snapshot.reason_msg:
-        evidence.append(f"Status detail {snapshot.reason_msg}")
+        evidence.append(f"Asset status detail {snapshot.reason_msg}")
     if snapshot.total_holders is not None:
         evidence.append(f"Onchain holders {snapshot.total_holders:,}")
     if snapshot.price_to_earnings is not None:
@@ -86,14 +89,28 @@ def analyze_cross_market(snapshot: CrossMarketSnapshot) -> CrossMarketResult:
     if snapshot.dividend_yield is not None:
         evidence.append(f"Dividend yield {snapshot.dividend_yield:.2f}%")
 
-    corporate_action = snapshot.reason_code in {"ASSET_PAUSED", "ASSET_LIMITED"}
-    closed_context = snapshot.reason_code in {"MARKET_CLOSED", "MARKET_PAUSED", "MARKET_MAINTENANCE"} or snapshot.market_status in {
+    market_status = (snapshot.market_status or "").strip().lower()
+    overall_market_status = (snapshot.overall_market_status or "").strip().lower()
+    reason_code = (snapshot.reason_code or "").strip().upper()
+
+    corporate_action = reason_code in {"ASSET_PAUSED", "ASSET_LIMITED"}
+    session_states = {
         "closed",
         "pause",
+        "paused",
         "premarket",
         "postmarket",
+        "afterhours",
+        "after_hours",
+        "offhours",
+        "off_hours",
         "overnight",
     }
+    closed_context = (
+        reason_code in {"MARKET_CLOSED", "MARKET_PAUSED", "MARKET_MAINTENANCE"}
+        or market_status in session_states
+        or overall_market_status in session_states
+    )
 
     if snapshot.shares_multiplier is None or snapshot.shares_multiplier <= 0:
         classification = "MULTIPLIER_UNAVAILABLE"
@@ -113,7 +130,10 @@ def analyze_cross_market(snapshot: CrossMarketSnapshot) -> CrossMarketResult:
         summary = "The available data is insufficient to calculate a multiplier adjusted cross market gap."
     elif abs(gap_pct) <= 0.15:
         classification = "NORMAL_TRACKING_RANGE"
-        summary = "After multiplier adjustment, the token and underlying stock are tracking within a small range consistent with normal source and update timing differences."
+        if closed_context:
+            summary = "After multiplier adjustment, the token and underlying stock are tracking within a small range, but off-hours or closed-session timing still increases synchronization risk."
+        else:
+            summary = "After multiplier adjustment, the token and underlying stock are tracking within a small range consistent with normal source and update timing differences."
     elif closed_context:
         classification = "SESSION_DRIVEN_GAP"
         summary = "A measurable price gap exists, but the current market session makes stale or asynchronous price discovery a major explanation."
@@ -155,6 +175,8 @@ def analyze_cross_market(snapshot: CrossMarketSnapshot) -> CrossMarketResult:
     misread_risk = max(5, min(95, misread_risk))
 
     warnings.append("A cross market gap is not labeled arbitrage without execution, liquidity and synchronization evidence")
+    if closed_context:
+        warnings.append("Off-hours or closed-session context can make token and underlying references update asynchronously")
 
     return CrossMarketResult(
         snapshot=snapshot,
