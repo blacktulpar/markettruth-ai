@@ -38,6 +38,24 @@ def test_closed_market_with_missing_stock_price_is_off_hours() -> None:
     assert result.misread_risk >= 50
 
 
+def test_offhours_with_small_gap_stays_normal_but_raises_misread_risk() -> None:
+    snapshot = CrossMarketSnapshot(
+        ticker="NVDA",
+        token_symbol="NVDAon",
+        token_price=231.7608,
+        shares_multiplier=1.000932,
+        stock_price=231.4450,
+        market_status="offhours",
+        reason_code="TRADING",
+    )
+
+    result = analyze_cross_market(snapshot)
+
+    assert result.classification == "NORMAL_TRACKING_RANGE"
+    assert result.misread_risk >= 30
+    assert any("Off-hours" in warning for warning in result.warnings)
+
+
 def test_corporate_action_overrides_gap_interpretation() -> None:
     snapshot = CrossMarketSnapshot(
         ticker="NVDA",
