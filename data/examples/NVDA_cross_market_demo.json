@@ -1,0 +1,23 @@
+{
+  "ticker": "NVDA",
+  "token_symbol": "NVDAon",
+  "chain_id": "56",
+  "contract_address": null,
+  "token_price": 231.7608,
+  "stock_price": 231.4450,
+  "shares_multiplier": 1.000932,
+  "token_price_change_24h": null,
+  "total_holders": 51051,
+  "token_market_cap": null,
+  "market_status": "OFFHOURS",
+  "open_state": true,
+  "reason_code": "TRADING",
+  "reason_msg": null,
+  "next_open_time": null,
+  "next_close_time": null,
+  "price_to_earnings": 28.84,
+  "dividend_yield": 0.12,
+  "price_high_52w": null,
+  "price_low_52w": null,
+  "data_timestamp": null
+}
