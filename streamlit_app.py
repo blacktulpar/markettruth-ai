@@ -64,7 +64,8 @@ st.markdown(
     .mt-evidence ul{margin:0;padding-left:1.15rem}.mt-evidence li{color:#344054;margin-bottom:.62rem;line-height:1.42}
     .mt-empty{padding:1.2rem;border:1px dashed #d0d5dd;border-radius:14px;color:#667085;background:#fcfcfd;margin-top:1rem}
     .mt-footnote{color:#98a2b3;font-size:.78rem;margin-top:1.2rem}
-    @media(max-width:900px){.mt-grid{grid-template-columns:1fr}.mt-title{font-size:2.35rem}}
+    @media(max-width:900px){.mt-grid{grid-template-columns:1fr}.mt-title{font-size:2.35rem}.mt-agent,.mt-evidence{min-height:auto}}
+    @media(max-width:640px){.block-container{padding-top:1.35rem;padding-left:1rem;padding-right:1rem}.mt-title{font-size:2rem}.mt-subtitle{font-size:.94rem}.mt-source,.mt-architecture,.mt-kpi,.mt-agent,.mt-evidence{padding:.85rem .9rem}.mt-live{margin-left:0}}
     </style>
     """,
     unsafe_allow_html=True,
@@ -139,6 +140,9 @@ def store_live(mode_key: str, payload: dict, warnings: list[str], asset: str) ->
 
 
 with st.sidebar:
+    st.page_link("streamlit_app.py", label="Investigate Now")
+    st.page_link("pages/1_How_It_Works.py", label="How It Works")
+    st.divider()
     st.header("Investigation")
     mode = st.selectbox("Mode", ["Market Move Autopsy", "Cross Market Reality Check"])
     source_mode = st.radio("Data source", ["Live Public Demo", "Validated Example", "Upload Snapshot"])
@@ -244,13 +248,22 @@ if mode == "Market Move Autopsy":
         ("Truth Confidence", f"{result.truth.confidence}/100", f"Evidence coverage / decisiveness • {compact_timestamp(snapshot.data_timestamp)}"),
     ])
 
-    st.markdown('<div class="mt-section-title">Specialist consensus</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mt-section-title">Specialist views</div>', unsafe_allow_html=True)
     st.markdown('<div class="mt-explain">Spot and derivatives specialists evaluate their evidence independently. Disagreement is surfaced instead of averaged away.</div>', unsafe_allow_html=True)
     left, right = st.columns(2)
     with left:
         render_agent("SPOT / MARKET STRUCTURE", result.spot.bias.upper(), result.spot.confidence)
     with right:
         render_agent("DERIVATIVES / POSITIONING", result.derivatives.bias.upper(), result.derivatives.confidence)
+
+    if (
+        result.truth.classification == "MIXED_OR_INCONCLUSIVE"
+        and result.spot.bias == result.derivatives.bias
+        and result.spot.bias in {"bullish", "bearish"}
+    ):
+        st.info(
+            f"Why mixed? Both specialist views are directionally {result.spot.bias}, but the observed move does not yet meet MarketTruth's rules for a clean single-driver classification."
+        )
 
     if result.truth.conflicts:
         conflict_text = "<br>".join(f"• {esc(item)}" for item in result.truth.conflicts)
