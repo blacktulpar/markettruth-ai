@@ -73,6 +73,8 @@ st.markdown(
 
 DEMO_MOVE_PATH = Path("data/examples/BTCUSDT_demo.json")
 DEMO_CROSS_PATH = Path("data/examples/NVDA_cross_market_demo.json")
+MODE_CRYPTO = "Crypto"
+MODE_TOKENIZED_STOCKS = "Tokenized Stocks"
 
 
 @st.cache_data(show_spinner=False)
@@ -112,7 +114,7 @@ def hero(source_text: str, live: bool = False) -> None:
     st.markdown('<div class="mt-subtitle">One question. Multiple specialist agents. One evidence based verdict.</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="mt-source"><strong>Evidence source:</strong> {esc(source_text)}</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="mt-architecture"><strong>Three layer architecture:</strong> Codex orchestrates the validated Agent OS workflow → Binance MCP / Skills Hub provide official evidence → MarketTruth applies deterministic, explainable analysis. The public demo reproduces the analysis without requiring visitors to connect an authenticated MCP session. See <strong>How It Works</strong> in the sidebar for a short explainer.</div>',
+        '<div class="mt-architecture"><strong>Shared three layer architecture:</strong> Codex orchestrates the validated Agent OS workflow → Binance MCP / Skills Hub provide official evidence → MarketTruth applies deterministic, explainable analysis. The public demo reproduces the analysis without requiring visitors to connect an authenticated MCP session. See <strong>How It Works</strong> in the sidebar for a short explainer.</div>',
         unsafe_allow_html=True,
     )
 
@@ -144,7 +146,7 @@ with st.sidebar:
     st.page_link("pages/1_How_It_Works.py", label="How It Works")
     st.divider()
     st.header("Investigation")
-    mode = st.selectbox("Mode", ["Market Move Autopsy", "Cross Market Reality Check"])
+    mode = st.selectbox("Mode", [MODE_CRYPTO, MODE_TOKENIZED_STOCKS])
     source_mode = st.radio("Data source", ["Live Public Demo", "Validated Example", "Upload Snapshot"])
 
     payload: dict | None = None
@@ -152,7 +154,7 @@ with st.sidebar:
     source_label = ""
     is_live = source_mode == "Live Public Demo"
 
-    if mode == "Market Move Autopsy":
+    if mode == MODE_CRYPTO:
         mode_key = "move"
         if source_mode == "Live Public Demo":
             asset = st.selectbox("Crypto asset", POPULAR_CRYPTO_SYMBOLS, index=0)
@@ -167,7 +169,7 @@ with st.sidebar:
             if st.session_state.get(f"{mode_key}_asset") == asset:
                 payload = st.session_state.get(f"{mode_key}_payload")
                 fetch_warnings = st.session_state.get(f"{mode_key}_warnings", [])
-            source_label = "Official Binance public Spot and USDⓈ-M market APIs via Frankfurt EU relay"
+            source_label = "Official Binance public Spot and USDⓈ-M market APIs"
         elif source_mode == "Validated Example":
             payload = load_snapshot(str(DEMO_MOVE_PATH))
             source_label = "Validated BTCUSDT example captured through the Binance MCP workflow"
@@ -220,7 +222,7 @@ with st.sidebar:
 if payload is None:
     hero(source_label or "Binance Agent OS", live=is_live)
     st.markdown(
-        '<div class="mt-empty"><strong>Ready for investigation.</strong><br>Open the <strong>›› menu in the top left</strong>, choose an asset, then press <strong>Run Live Investigation</strong>. The public demo fetches fresh read-only Binance data and sends the normalized evidence through the same deterministic MarketTruth analyzers used by the validated Agent OS workflows.</div>',
+        '<div class="mt-empty"><strong>Ready for investigation.</strong><br>Open the <strong>›› menu in the top left</strong>, choose a mode and asset, then press <strong>Run Live Investigation</strong>. The public demo fetches fresh read-only Binance data and sends the normalized evidence through the same deterministic MarketTruth analyzers used by the validated Agent OS workflows.</div>',
         unsafe_allow_html=True,
     )
     st.stop()
@@ -228,7 +230,7 @@ if payload is None:
 hero(source_label, live=is_live)
 
 if source_mode == "Validated Example":
-    if mode == "Market Move Autopsy":
+    if mode == MODE_CRYPTO:
         st.info("Validated Agent OS example: preserved normalized evidence from a completed Codex orchestrated Binance MCP investigation. This is not fabricated sample data.")
     else:
         st.info("Validated Binance Skills Hub example: preserved normalized evidence from the completed NVDA tokenized securities workflow. This is not fabricated sample data.")
@@ -238,7 +240,7 @@ if fetch_warnings:
         for warning in fetch_warnings:
             st.warning(warning)
 
-if mode == "Market Move Autopsy":
+if mode == MODE_CRYPTO:
     snapshot = MarketSnapshot.from_dict(payload)
     result = analyze_snapshot(snapshot)
     classification = result.truth.classification.replace("_", " ").title()
@@ -324,6 +326,6 @@ with st.expander("Technical evidence snapshot (normalized)"):
     st.json(payload)
 
 st.markdown(
-    '<div class="mt-footnote">MarketTruth AI is read only. The core Market Move Autopsy workflow was validated end to end through Codex + Binance MCP; the interactive public demo uses official public Binance market endpoints, with crypto requests routed through a read-only Frankfurt EU relay so visitors can run investigations without connecting an account.</div>',
+    '<div class="mt-footnote">MarketTruth AI is read only. The core Market Move Autopsy workflow was validated end to end through Codex + Binance MCP; the interactive public demo uses official public Binance market endpoints so visitors can run investigations without connecting an account.</div>',
     unsafe_allow_html=True,
 )
