@@ -10,7 +10,7 @@ Most market tools compress many signals into a single direction, score or buy/se
 
 ## Solution
 
-MarketTruth AI separates AI orchestration, Binance evidence, and deterministic analysis into a three layer architecture.
+MarketTruth AI uses a shared three layer architecture across its investigation modes.
 
 ### Layer 1: Codex AI orchestration
 
@@ -20,14 +20,16 @@ Codex orchestrates the validated Agent OS workflow, calls the required Binance t
 
 The project uses two official Agent OS ecosystem components:
 
-- Binance MCP for live crypto spot and USDⓈ M derivatives evidence
+- Binance MCP for Crypto spot and USDⓈ M derivatives evidence
 - Binance Skills Hub for tokenized securities and cross market context
 
 ### Layer 3: MarketTruth deterministic analysis
 
 MarketTruth normalizes the Binance evidence, calculates derived metrics, and applies transparent rules for classification, risk, confidence and conflict detection. This keeps the core result reproducible instead of relying on an opaque LLM market opinion.
 
-## Market Move Autopsy
+## Mode 01: Crypto
+
+### Market Move Autopsy
 
 Uses Binance MCP read only market data to compare:
 
@@ -44,7 +46,9 @@ It classifies the move and explicitly surfaces conflicts such as top traders bei
 
 The classification taxonomy and exact decision thresholds are MarketTruth defined heuristics built from established market concepts. They are not official Binance trading signals.
 
-## Cross Market Reality Check
+## Mode 02: Tokenized Stocks
+
+### Cross Market Reality Check
 
 Uses the official Binance tokenized securities skill from Binance Skills Hub and documented public Binance Web3 APIs to compare:
 
@@ -70,7 +74,7 @@ The BTCUSDT `Validated Example` preserves evidence from a completed Codex orches
 
 ## Validated live runs
 
-### BTCUSDT
+### BTCUSDT — Crypto / Market Move Autopsy
 
 - all 10 required Binance MCP calls succeeded
 - Spot Agent: mixed
@@ -80,7 +84,7 @@ The BTCUSDT `Validated Example` preserves evidence from a completed Codex orches
 - Trap Risk: 15/100
 - Truth Confidence: 85/100
 
-### NVDA tokenized security
+### NVDA — Tokenized Stocks / Cross Market Reality Check
 
 - official Binance tokenized securities skill installed and used
 - token price: $231.7608
@@ -97,7 +101,7 @@ The NVDA example demonstrates the core value proposition: a visible cross market
 
 ## Public demo explanation for judges
 
-The public demo is designed for quick evaluation. It includes concise score explanations and a separate **How It Works** page describing the three layer architecture, validated workflow, public demo distinction, derived metrics and evidence limits.
+The public demo is designed for quick evaluation. It includes concise score explanations and a separate **How It Works** page describing the shared three layer architecture, validated workflow, public demo distinction, derived metrics and evidence limits.
 
 Detailed methodology remains available in GitHub guides for judges who want to inspect the thresholds and calculations.
 
@@ -113,9 +117,9 @@ Visitor → Streamlit → official public Binance data → normalized evidence �
 
 ## Form ready project description
 
-MarketTruth AI is a read only multi agent market investigation system built with Binance Agent OS. It uses a three layer architecture: Codex orchestrates the validated AI agent workflow, Binance MCP and Skills Hub provide official market evidence, and MarketTruth applies deterministic, explainable analysis to generate classifications, risk scores, confidence and explicit conflict detection.
+MarketTruth AI is a read only multi agent market investigation system built with Binance Agent OS. It uses a shared three layer architecture: Codex orchestrates the validated AI agent workflow, Binance MCP and Skills Hub provide official market evidence, and MarketTruth applies deterministic, explainable analysis to generate classifications, risk scores, confidence and explicit conflict detection.
 
-Market Move Autopsy compares crypto spot market structure with derivatives positioning, including momentum, order book conditions, funding, open interest, long short positioning, taker flow and basis. Cross Market Reality Check analyzes tokenized US stocks by applying the shares multiplier, comparing the adjusted reference with the underlying share, and checking market session or asset specific context before interpreting a visible gap.
+Mode 01, **Crypto**, uses the Market Move Autopsy workflow to compare crypto spot market structure with derivatives positioning, including momentum, order book conditions, funding, open interest, long short positioning, taker flow and basis. Mode 02, **Tokenized Stocks**, uses Cross Market Reality Check to analyze tokenized US stocks by applying the shares multiplier, comparing the adjusted reference with the underlying share, and checking market session or asset specific context before interpreting a visible gap.
 
 The validated examples were produced through completed Binance Agent OS ecosystem workflows. The public Streamlit demo uses read only public Binance data to reproduce the same deterministic analysis without requiring judges to connect an authenticated MCP session. MarketTruth does not place orders or move funds, and it avoids claims that are not supported by the available evidence.
 
@@ -127,9 +131,9 @@ The validated examples were produced through completed Binance Agent OS ecosyste
 - GitHub Actions CI
 - Binance MCP tool inventory
 - documented live collection prompts
-- Streamlit dashboard with two investigation modes
+- Streamlit dashboard with **Crypto** and **Tokenized Stocks** modes
 - dedicated How It Works page
-- detailed interpretation guides for both modes
+- detailed interpretation guides for both workflows
 - first live BTCUSDT and NVDA validations completed
 
 ## Safety
