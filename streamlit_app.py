@@ -220,7 +220,7 @@ with st.sidebar:
 if payload is None:
     hero(source_label or "Binance Agent OS", live=is_live)
     st.markdown(
-        '<div class="mt-empty"><strong>Ready for investigation.</strong><br>Select an asset in the sidebar and press <strong>Run Live Investigation</strong>. The public demo fetches fresh read-only Binance data and sends the normalized evidence through the same deterministic MarketTruth analyzers used by the validated Agent OS workflows.</div>',
+        '<div class="mt-empty"><strong>Ready for investigation.</strong><br>Open the <strong>›› menu in the top left</strong>, choose an asset, then press <strong>Run Live Investigation</strong>. The public demo fetches fresh read-only Binance data and sends the normalized evidence through the same deterministic MarketTruth analyzers used by the validated Agent OS workflows.</div>',
         unsafe_allow_html=True,
     )
     st.stop()
