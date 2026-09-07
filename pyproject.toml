@@ -11,7 +11,7 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
-demo = ["streamlit>=1.40"]
+demo = ["streamlit>=1.59,<2"]
 
 [project.scripts]
 markettruth = "markettruth.cli:main"
