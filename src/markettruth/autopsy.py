@@ -135,6 +135,16 @@ def analyze_derivatives(snapshot: MarketSnapshot) -> SpecialistResult:
         evidence.append(f"Perpetual basis {value:+.3f}%")
         score += 1 if value >= 0.15 else -1 if value <= -0.15 else 0
 
+    if not evidence:
+        return SpecialistResult(
+            agent="derivatives",
+            bias="n/a",
+            confidence=0,
+            evidence=[],
+            warnings=["Derivatives evidence unavailable"],
+            data_timestamp=snapshot.data_timestamp,
+        )
+
     if snapshot.oi_change_1h is None and snapshot.oi_change_4h is None:
         warnings.append("Historical open-interest change unavailable")
 
