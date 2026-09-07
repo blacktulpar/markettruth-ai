@@ -72,7 +72,7 @@ with right:
         """
         <div class="mt-card"><strong>Live Public Demo</strong><br><br>
         Visitors can run fresh investigations without a Binance account or authenticated MCP connection. The public app uses official read only Binance data and sends it through the same deterministic MarketTruth analysis engine.<br><br>
-        <span class="mt-small">The public demo does not pretend to run the judge inside our Codex or Binance session.</span></div>
+        <span class="mt-small">The public demo does not pretend to run inside the project's Codex or authenticated Binance session.</span></div>
         """,
         unsafe_allow_html=True,
     )
