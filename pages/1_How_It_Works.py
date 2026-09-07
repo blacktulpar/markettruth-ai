@@ -7,7 +7,7 @@ st.set_page_config(
     page_title="How It Works | MarketTruth AI",
     page_icon="🧭",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="locked",
 )
 
 st.markdown(
