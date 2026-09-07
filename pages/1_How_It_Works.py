@@ -14,7 +14,7 @@ st.markdown(
     """
     <style>
     :root {--mt-yellow:#f0b90b;--mt-ink:#111827;--mt-muted:#667085;--mt-line:#e5e7eb;}
-    .block-container{max-width:1050px;padding-top:2.2rem;padding-bottom:3rem}
+    .block-container{max-width:1050px;padding-top:4.25rem;padding-bottom:3rem}
     [data-testid="stSidebar"]{background:#f7f8fa;border-right:1px solid #e5e7eb}
     .mt-badge{display:inline-block;padding:.35rem .65rem;border-radius:999px;background:#fff7d6;border:1px solid #f5d96b;color:#7a5b00;font-size:.76rem;font-weight:700;letter-spacing:.04em;margin-bottom:.8rem}
     .mt-title{font-size:2.8rem;line-height:1.05;font-weight:800;color:var(--mt-ink);margin:0}
@@ -25,7 +25,7 @@ st.markdown(
     .mt-note{padding:.9rem 1rem;border:1px solid var(--mt-line);border-radius:12px;background:#f8fafc;color:#475467;margin:.7rem 0 1rem}
     .mt-small{color:var(--mt-muted);font-size:.88rem;line-height:1.55}
     @media(max-width:900px){.mt-title{font-size:2.25rem}.mt-card{min-height:auto}}
-    @media(max-width:640px){.block-container{padding-top:1.35rem;padding-left:1rem;padding-right:1rem}.mt-title{font-size:2rem}.mt-subtitle{font-size:.94rem}.mt-flow,.mt-note,.mt-card{padding:.85rem .9rem}}
+    @media(max-width:640px){.block-container{padding-top:4.25rem;padding-left:1rem;padding-right:1rem}.mt-title{font-size:2rem}.mt-subtitle{font-size:.94rem}.mt-flow,.mt-note,.mt-card{padding:.85rem .9rem}}
     </style>
     """,
     unsafe_allow_html=True,
