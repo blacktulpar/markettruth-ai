@@ -156,7 +156,7 @@ with st.sidebar:
             if st.session_state.get(f"{mode_key}_asset") == asset:
                 payload = st.session_state.get(f"{mode_key}_payload")
                 fetch_warnings = st.session_state.get(f"{mode_key}_warnings", [])
-            source_label = "Official Binance public Spot and USDⓈ-M market APIs"
+            source_label = "Official Binance public Spot and USDⓈ-M market APIs via Frankfurt EU relay"
         elif source_mode == "Validated Example":
             payload = load_snapshot(str(DEMO_MOVE_PATH))
             source_label = "Validated BTCUSDT example captured through the Binance MCP workflow"
@@ -293,6 +293,6 @@ with st.expander("Normalized evidence snapshot"):
     st.json(payload)
 
 st.markdown(
-    '<div class="mt-footnote">MarketTruth AI is read only. The core Market Move Autopsy workflow was validated end to end through Binance MCP; the interactive public demo uses official public Binance market endpoints so visitors can run investigations without connecting an account.</div>',
+    '<div class="mt-footnote">MarketTruth AI is read only. The core Market Move Autopsy workflow was validated end to end through Binance MCP; the interactive public demo uses official public Binance market endpoints, with crypto requests routed through a read-only Frankfurt EU relay so visitors can run investigations without connecting an account.</div>',
     unsafe_allow_html=True,
 )
