@@ -37,7 +37,8 @@ st.markdown(
     .mt-live{display:inline-block;margin-left:.45rem;padding:.35rem .65rem;border-radius:999px;background:#ecfdf3;border:1px solid #abefc6;color:#067647;font-size:.76rem;font-weight:700;letter-spacing:.04em;margin-bottom:.8rem}
     .mt-title{font-size:3rem;line-height:1.05;font-weight:800;color:var(--mt-ink);margin:0}
     .mt-subtitle{color:var(--mt-muted);font-size:1.02rem;margin:.65rem 0 1.3rem}
-    .mt-source{padding:.85rem 1rem;border:1px solid #e8cf72;border-left:4px solid var(--mt-yellow);border-radius:12px;background:#fffdf5;color:#4b5563;margin-bottom:1.6rem}
+    .mt-source{padding:.85rem 1rem;border:1px solid #e8cf72;border-left:4px solid var(--mt-yellow);border-radius:12px;background:#fffdf5;color:#4b5563;margin-bottom:.75rem}
+    .mt-architecture{padding:.75rem 1rem;border:1px solid var(--mt-line);border-radius:12px;background:#f8fafc;color:#475467;font-size:.86rem;line-height:1.5;margin-bottom:1.6rem}
     .mt-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;margin:.85rem 0 1.35rem}
     .mt-kpi,.mt-agent,.mt-evidence{background:var(--mt-panel);border:1px solid var(--mt-line);border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
     .mt-kpi{padding:1rem 1.05rem;min-height:108px}
@@ -45,6 +46,7 @@ st.markdown(
     .mt-kpi-value{color:var(--mt-ink);font-size:1.55rem;line-height:1.15;font-weight:800;overflow-wrap:anywhere}
     .mt-kpi-sub{color:var(--mt-muted);font-size:.78rem;margin-top:.45rem}
     .mt-section-title{color:var(--mt-ink);font-size:1.45rem;font-weight:800;margin:1.4rem 0 .8rem}
+    .mt-explain{color:var(--mt-muted);font-size:.86rem;line-height:1.45;margin:-.35rem 0 .85rem}
     .mt-agent{padding:1.05rem 1.1rem;min-height:158px}
     .mt-agent-name{color:var(--mt-muted);font-size:.84rem;font-weight:700}
     .mt-agent-bias{color:var(--mt-ink);font-size:1.75rem;font-weight:800;margin:.35rem 0 .55rem}
@@ -108,6 +110,10 @@ def hero(source_text: str, live: bool = False) -> None:
     st.markdown('<div class="mt-title">MarketTruth AI</div>', unsafe_allow_html=True)
     st.markdown('<div class="mt-subtitle">One question. Multiple specialist agents. One evidence based verdict.</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="mt-source"><strong>Evidence source:</strong> {esc(source_text)}</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="mt-architecture"><strong>Three layer architecture:</strong> Codex orchestrates the validated Agent OS workflow → Binance MCP / Skills Hub provide official evidence → MarketTruth applies deterministic, explainable analysis. The public demo reproduces the analysis without requiring visitors to connect an authenticated MCP session. See <strong>How It Works</strong> in the sidebar for a short explainer.</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def render_kpis(items: list[tuple[str, str, str]]) -> None:
@@ -214,6 +220,13 @@ if payload is None:
     st.stop()
 
 hero(source_label, live=is_live)
+
+if source_mode == "Validated Example":
+    if mode == "Market Move Autopsy":
+        st.info("Validated Agent OS example: preserved normalized evidence from a completed Codex orchestrated Binance MCP investigation. This is not fabricated sample data.")
+    else:
+        st.info("Validated Binance Skills Hub example: preserved normalized evidence from the completed NVDA tokenized securities workflow. This is not fabricated sample data.")
+
 if fetch_warnings:
     with st.expander("Live collection notes", expanded=False):
         for warning in fetch_warnings:
@@ -226,12 +239,13 @@ if mode == "Market Move Autopsy":
 
     st.markdown(f'<div class="mt-section-title">{esc(snapshot.symbol)} Market Move Autopsy</div>', unsafe_allow_html=True)
     render_kpis([
-        ("Classification", classification, "Truth Agent conclusion"),
-        ("Trap Risk", f"{result.trap_risk}/100", "Higher means more fragile conditions"),
-        ("Truth Confidence", f"{result.truth.confidence}/100", f"Data: {compact_timestamp(snapshot.data_timestamp)}"),
+        ("Classification", classification, "Evidence supported move type, not a forecast"),
+        ("Trap Risk", f"{result.trap_risk}/100", "Fragility / crowding, not reversal probability"),
+        ("Truth Confidence", f"{result.truth.confidence}/100", f"Evidence coverage / decisiveness • {compact_timestamp(snapshot.data_timestamp)}"),
     ])
 
     st.markdown('<div class="mt-section-title">Specialist consensus</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mt-explain">Spot and derivatives specialists evaluate their evidence independently. Disagreement is surfaced instead of averaged away.</div>', unsafe_allow_html=True)
     left, right = st.columns(2)
     with left:
         render_agent("SPOT / MARKET STRUCTURE", result.spot.bias.upper(), result.spot.confidence)
@@ -267,12 +281,13 @@ else:
 
     st.markdown(f'<div class="mt-section-title">{esc(snapshot.ticker)} Cross Market Reality Check</div>', unsafe_allow_html=True)
     render_kpis([
-        ("Classification", classification, "PriceTruth conclusion"),
-        ("Adjusted Gap", gap_label, "Token price corrected by shares multiplier"),
-        ("Misread Risk", f"{result.misread_risk}/100", "Risk of treating the visible gap as a simple price signal"),
+        ("Classification", classification, "Context aware price state, not a trade signal"),
+        ("Adjusted Gap", gap_label, "Token price after shares multiplier normalization"),
+        ("Misread Risk", f"{result.misread_risk}/100", "Risk of misreading the gap, not asset risk"),
     ])
 
     st.markdown('<div class="mt-section-title">Reality layers</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mt-explain">MarketTruth checks economically comparable pricing and session context before treating a visible gap as meaningful.</div>', unsafe_allow_html=True)
     token_col, context_col = st.columns(2)
     with token_col:
         render_agent("TOKENIZED ASSET", snapshot.token_symbol or snapshot.ticker, result.confidence, f"Adjusted reference {reference_text}")
@@ -289,10 +304,11 @@ else:
         for warning in result.warnings:
             st.warning(warning)
 
-with st.expander("Normalized evidence snapshot"):
+with st.expander("Technical evidence snapshot (normalized)"):
+    st.caption("Technical audit view: the stable schema passed from data collection into the MarketTruth analysis engine.")
     st.json(payload)
 
 st.markdown(
-    '<div class="mt-footnote">MarketTruth AI is read only. The core Market Move Autopsy workflow was validated end to end through Binance MCP; the interactive public demo uses official public Binance market endpoints, with crypto requests routed through a read-only Frankfurt EU relay so visitors can run investigations without connecting an account.</div>',
+    '<div class="mt-footnote">MarketTruth AI is read only. The core Market Move Autopsy workflow was validated end to end through Codex + Binance MCP; the interactive public demo uses official public Binance market endpoints, with crypto requests routed through a read-only Frankfurt EU relay so visitors can run investigations without connecting an account.</div>',
     unsafe_allow_html=True,
 )
