@@ -9,13 +9,19 @@ import streamlit as st
 
 from markettruth.autopsy import MarketSnapshot, analyze_snapshot
 from markettruth.cross_market import CrossMarketSnapshot, analyze_cross_market
+from markettruth.live_public import (
+    POPULAR_CRYPTO_SYMBOLS,
+    fetch_cross_market_snapshot,
+    fetch_crypto_snapshot,
+    fetch_tokenized_stock_list,
+)
 
 
 st.set_page_config(
     page_title="MarketTruth AI",
     page_icon="🔎",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 st.markdown(
@@ -28,6 +34,7 @@ st.markdown(
     .block-container{max-width:1180px;padding-top:2.1rem;padding-bottom:3rem}
     [data-testid="stSidebar"]{background:#f7f8fa;border-right:1px solid #e5e7eb}
     .mt-badge{display:inline-block;padding:.35rem .65rem;border-radius:999px;background:#fff7d6;border:1px solid #f5d96b;color:#7a5b00;font-size:.76rem;font-weight:700;letter-spacing:.04em;margin-bottom:.8rem}
+    .mt-live{display:inline-block;margin-left:.45rem;padding:.35rem .65rem;border-radius:999px;background:#ecfdf3;border:1px solid #abefc6;color:#067647;font-size:.76rem;font-weight:700;letter-spacing:.04em;margin-bottom:.8rem}
     .mt-title{font-size:3rem;line-height:1.05;font-weight:800;color:var(--mt-ink);margin:0}
     .mt-subtitle{color:var(--mt-muted);font-size:1.02rem;margin:.65rem 0 1.3rem}
     .mt-source{padding:.85rem 1rem;border:1px solid #e8cf72;border-left:4px solid var(--mt-yellow);border-radius:12px;background:#fffdf5;color:#4b5563;margin-bottom:1.6rem}
@@ -53,6 +60,7 @@ st.markdown(
     .mt-evidence{padding:1rem 1.1rem;min-height:260px}
     .mt-evidence h4{margin:0 0 .75rem;color:var(--mt-ink);font-size:1.05rem}
     .mt-evidence ul{margin:0;padding-left:1.15rem}.mt-evidence li{color:#344054;margin-bottom:.62rem;line-height:1.42}
+    .mt-empty{padding:1.2rem;border:1px dashed #d0d5dd;border-radius:14px;color:#667085;background:#fcfcfd;margin-top:1rem}
     .mt-footnote{color:#98a2b3;font-size:.78rem;margin-top:1.2rem}
     @media(max-width:900px){.mt-grid{grid-template-columns:1fr}.mt-title{font-size:2.35rem}}
     </style>
@@ -60,18 +68,18 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-LIVE_MOVE_PATH = Path("data/live/BTCUSDT.json")
-LIVE_CROSS_PATH = Path("data/live/NVDA_cross_market.json")
 DEMO_MOVE_PATH = Path("data/examples/BTCUSDT_demo.json")
 DEMO_CROSS_PATH = Path("data/examples/NVDA_cross_market_demo.json")
-
-MOVE_PATH = LIVE_MOVE_PATH if LIVE_MOVE_PATH.exists() else DEMO_MOVE_PATH
-CROSS_PATH = LIVE_CROSS_PATH if LIVE_CROSS_PATH.exists() else DEMO_CROSS_PATH
 
 
 @st.cache_data(show_spinner=False)
 def load_snapshot(path: str) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+@st.cache_data(show_spinner=False, ttl=3600)
+def load_stock_universe() -> list[dict]:
+    return fetch_tokenized_stock_list()
 
 
 def esc(value: object) -> str:
@@ -94,15 +102,12 @@ def evidence_html(title: str, items: list[str]) -> str:
     return f'<div class="mt-evidence"><h4>{esc(title)}</h4><ul>{lis}</ul></div>'
 
 
-def hero(source_text: str) -> None:
-    st.markdown('<div class="mt-badge">BINANCE AGENT OS • READ ONLY</div>', unsafe_allow_html=True)
+def hero(source_text: str, live: bool = False) -> None:
+    live_badge = '<span class="mt-live">LIVE PUBLIC DATA</span>' if live else ""
+    st.markdown(f'<span class="mt-badge">BINANCE AGENT OS • READ ONLY</span>{live_badge}', unsafe_allow_html=True)
     st.markdown('<div class="mt-title">MarketTruth AI</div>', unsafe_allow_html=True)
     st.markdown('<div class="mt-subtitle">One question. Multiple specialist agents. One evidence based verdict.</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="mt-source"><strong>Evidence source:</strong> {esc(source_text)}</div>', unsafe_allow_html=True)
-
-
-def snapshot_kind(path: Path) -> str:
-    return "Local live snapshot" if "data\\live" in str(path) or "data/live" in str(path) else "Validated example snapshot"
 
 
 def render_kpis(items: list[tuple[str, str, str]]) -> None:
@@ -121,44 +126,109 @@ def render_agent(name: str, value: str, confidence: int, sub: str | None = None)
     )
 
 
+def store_live(mode_key: str, payload: dict, warnings: list[str], asset: str) -> None:
+    st.session_state[f"{mode_key}_payload"] = payload
+    st.session_state[f"{mode_key}_warnings"] = warnings
+    st.session_state[f"{mode_key}_asset"] = asset
+
+
 with st.sidebar:
     st.header("Investigation")
     mode = st.selectbox("Mode", ["Market Move Autopsy", "Cross Market Reality Check"])
-    default_path = MOVE_PATH if mode == "Market Move Autopsy" else CROSS_PATH
-    snapshot_path = st.text_input("Normalized snapshot", str(default_path), key=f"path_{mode}")
-    uploaded = st.file_uploader("Upload another normalized snapshot", type="json", key=f"upload_{mode}")
-    st.caption("Use the matching Binance Agent OS workflow to refresh live evidence locally.")
+    source_mode = st.radio("Data source", ["Live Public Demo", "Validated Example", "Upload Snapshot"])
+
+    payload: dict | None = None
+    fetch_warnings: list[str] = []
+    source_label = ""
+    is_live = source_mode == "Live Public Demo"
+
+    if mode == "Market Move Autopsy":
+        mode_key = "move"
+        if source_mode == "Live Public Demo":
+            asset = st.selectbox("Crypto asset", POPULAR_CRYPTO_SYMBOLS, index=0)
+            if st.button("Run Live Investigation", type="primary", use_container_width=True):
+                with st.spinner(f"Collecting live Binance evidence for {asset}..."):
+                    try:
+                        live_payload, live_warnings = fetch_crypto_snapshot(asset)
+                        store_live(mode_key, live_payload, live_warnings, asset)
+                    except Exception as exc:
+                        st.error(f"Live investigation failed: {exc}")
+            if st.session_state.get(f"{mode_key}_asset") == asset:
+                payload = st.session_state.get(f"{mode_key}_payload")
+                fetch_warnings = st.session_state.get(f"{mode_key}_warnings", [])
+            source_label = "Official Binance public Spot and USDⓈ-M market APIs"
+        elif source_mode == "Validated Example":
+            payload = load_snapshot(str(DEMO_MOVE_PATH))
+            source_label = "Validated BTCUSDT example captured through the Binance MCP workflow"
+        else:
+            uploaded = st.file_uploader("Upload normalized crypto snapshot", type="json", key="move_upload")
+            if uploaded is not None:
+                payload = json.load(uploaded)
+            source_label = "Uploaded normalized snapshot"
+    else:
+        mode_key = "cross"
+        if source_mode == "Live Public Demo":
+            rows: list[dict] = []
+            stock_error: str | None = None
+            try:
+                rows = load_stock_universe()
+            except Exception as exc:
+                stock_error = str(exc)
+            tickers = sorted({str(row.get("ticker", "")).upper() for row in rows if row.get("ticker")}) or ["NVDA"]
+            default_index = tickers.index("NVDA") if "NVDA" in tickers else 0
+            asset = st.selectbox("Tokenized stock", tickers, index=default_index)
+            if stock_error:
+                st.caption(f"Stock universe could not refresh: {stock_error}")
+            if st.button("Run Live Investigation", type="primary", use_container_width=True):
+                with st.spinner(f"Collecting live Binance Web3 evidence for {asset}..."):
+                    try:
+                        live_payload, live_warnings = fetch_cross_market_snapshot(asset, rows or None)
+                        store_live(mode_key, live_payload, live_warnings, asset)
+                    except Exception as exc:
+                        st.error(f"Live investigation failed: {exc}")
+            if st.session_state.get(f"{mode_key}_asset") == asset:
+                payload = st.session_state.get(f"{mode_key}_payload")
+                fetch_warnings = st.session_state.get(f"{mode_key}_warnings", [])
+            source_label = "Official Binance Skills Hub tokenized-securities public Web3 APIs"
+        elif source_mode == "Validated Example":
+            payload = load_snapshot(str(DEMO_CROSS_PATH))
+            source_label = "Validated NVDA example from the Binance Skills Hub workflow"
+        else:
+            uploaded = st.file_uploader("Upload normalized cross-market snapshot", type="json", key="cross_upload")
+            if uploaded is not None:
+                payload = json.load(uploaded)
+            source_label = "Uploaded normalized snapshot"
+
     st.divider()
     st.caption("System")
-    st.caption("Binance Agent OS: read only")
-    st.caption("No orders, transfers, margin, loans or fund movement")
+    st.caption("Read only. No API key required for the public demo.")
+    st.caption("No orders, transfers, margin, loans or fund movement.")
 
-try:
-    if uploaded is not None:
-        payload = json.load(uploaded)
-        source_label = "Uploaded normalized snapshot"
-    else:
-        selected_path = Path(snapshot_path)
-        payload = load_snapshot(snapshot_path)
-        source_label = snapshot_kind(selected_path)
-except Exception as exc:
-    hero("Binance Agent OS workflow")
-    st.warning(f"Snapshot unavailable: {exc}")
+
+if payload is None:
+    hero(source_label or "Binance Agent OS", live=is_live)
+    st.markdown(
+        '<div class="mt-empty"><strong>Ready for investigation.</strong><br>Select an asset in the sidebar and press <strong>Run Live Investigation</strong>. The public demo fetches fresh read-only Binance data and sends the normalized evidence through the same deterministic MarketTruth analyzers used by the validated Agent OS workflows.</div>',
+        unsafe_allow_html=True,
+    )
     st.stop()
 
-st.caption(source_label)
+hero(source_label, live=is_live)
+if fetch_warnings:
+    with st.expander("Live collection notes", expanded=False):
+        for warning in fetch_warnings:
+            st.warning(warning)
 
 if mode == "Market Move Autopsy":
     snapshot = MarketSnapshot.from_dict(payload)
     result = analyze_snapshot(snapshot)
     classification = result.truth.classification.replace("_", " ").title()
 
-    hero("Binance MCP spot and USDⓈ-M derivatives evidence. The dashboard analyzes a normalized snapshot and never places orders.")
     st.markdown(f'<div class="mt-section-title">{esc(snapshot.symbol)} Market Move Autopsy</div>', unsafe_allow_html=True)
     render_kpis([
         ("Classification", classification, "Truth Agent conclusion"),
         ("Trap Risk", f"{result.trap_risk}/100", "Higher means more fragile conditions"),
-        ("Truth Confidence", f"{result.truth.confidence}/100", f"Snapshot: {compact_timestamp(snapshot.data_timestamp)}"),
+        ("Truth Confidence", f"{result.truth.confidence}/100", f"Data: {compact_timestamp(snapshot.data_timestamp)}"),
     ])
 
     st.markdown('<div class="mt-section-title">Specialist consensus</div>', unsafe_allow_html=True)
@@ -195,7 +265,6 @@ else:
     gap_label = "Unavailable" if result.gap_pct is None else f"{result.gap_pct:+.3f}%"
     reference_text = "Unavailable" if result.reference_price is None else f"${result.reference_price:,.4f}"
 
-    hero("Binance Skills Hub tokenized securities data and official public Binance Web3 APIs. No trading actions are used.")
     st.markdown(f'<div class="mt-section-title">{esc(snapshot.ticker)} Cross Market Reality Check</div>', unsafe_allow_html=True)
     render_kpis([
         ("Classification", classification, "PriceTruth conclusion"),
@@ -220,7 +289,10 @@ else:
         for warning in result.warnings:
             st.warning(warning)
 
-with st.expander("Normalized snapshot"):
+with st.expander("Normalized evidence snapshot"):
     st.json(payload)
 
-st.markdown('<div class="mt-footnote">MarketTruth AI is a read only investigation prototype. It does not place orders or move funds.</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="mt-footnote">MarketTruth AI is read only. The core Market Move Autopsy workflow was validated end to end through Binance MCP; the interactive public demo uses official public Binance market endpoints so visitors can run investigations without connecting an account.</div>',
+    unsafe_allow_html=True,
+)
