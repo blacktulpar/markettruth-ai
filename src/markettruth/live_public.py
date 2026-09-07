@@ -9,8 +9,11 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
-# Binance documents several interchangeable Spot REST hosts. Cloud providers often
-# share egress IPs, so one host can be throttled while another remains usable.
+# Public crypto demo traffic is routed through a small Vercel Function in Frankfurt.
+# This avoids cloud-host geo/IP restrictions while keeping the app read only.
+CRYPTO_RELAY_BASE = "https://markettruth-api.vercel.app"
+
+# Direct Binance hosts remain as a fallback for local use or relay outages.
 SPOT_BASES = (
     "https://api.binance.com",
     "https://api-gcp.binance.com",
@@ -45,9 +48,16 @@ class LiveDataError(RuntimeError):
     pass
 
 
-def _request_json(base: str, path: str, params: dict[str, Any] | None = None, *, web3: bool = False) -> Any:
+def _request_json(
+    base: str,
+    path: str,
+    params: dict[str, Any] | None = None,
+    *,
+    web3: bool = False,
+) -> Any:
     query = f"?{urlencode(params)}" if params else ""
-    request = Request(base + path + query, headers=WEB3_HEADERS if web3 else BINANCE_HEADERS)
+    headers = WEB3_HEADERS if web3 else BINANCE_HEADERS
+    request = Request(base + path + query, headers=headers)
     try:
         with urlopen(request, timeout=12) as response:
             payload = json.load(response)
@@ -60,7 +70,9 @@ def _request_json(base: str, path: str, params: dict[str, Any] | None = None, *,
 
     if web3 and isinstance(payload, dict):
         if payload.get("code") not in (None, "000000") or payload.get("success") is False:
-            raise LiveDataError(f"Binance Web3 error from {path}: {payload.get('message') or payload.get('code')}")
+            raise LiveDataError(
+                f"Binance Web3 error from {path}: {payload.get('message') or payload.get('code')}"
+            )
     return payload
 
 
@@ -156,16 +168,11 @@ def _parallel(tasks: dict[str, TaskSpec]) -> tuple[dict[str, Any], list[str]]:
     return results, warnings
 
 
-def fetch_crypto_snapshot(symbol: str) -> tuple[dict[str, Any], list[str]]:
-    symbol = symbol.strip().upper()
-    if not symbol.endswith("USDT"):
-        raise LiveDataError("Market Move Autopsy currently expects a USDT spot/perpetual symbol")
-
-    tasks: dict[str, TaskSpec] = {
+def _crypto_tasks(symbol: str) -> dict[str, TaskSpec]:
+    return {
         "spot ticker": (SPOT_BASES, "/api/v3/ticker/24hr", {"symbol": symbol}, False),
         "spot klines": (SPOT_BASES, "/api/v3/klines", {"symbol": symbol, "interval": "15m", "limit": 48}, False),
         "spot depth": (SPOT_BASES, "/api/v3/depth", {"symbol": symbol, "limit": 100}, False),
-        # Funding history is lower-weight and is a useful fallback when premiumIndex is WAF-throttled.
         "funding": (FUTURES_BASE, "/fapi/v1/fundingRate", {"symbol": symbol, "limit": 1}, False),
         "open interest history": (FUTURES_BASE, "/futures/data/openInterestHist", {"symbol": symbol, "period": "15m", "limit": 48}, False),
         "global long short": (FUTURES_BASE, "/futures/data/globalLongShortAccountRatio", {"symbol": symbol, "period": "15m", "limit": 24}, False),
@@ -173,11 +180,30 @@ def fetch_crypto_snapshot(symbol: str) -> tuple[dict[str, Any], list[str]]:
         "taker flow": (FUTURES_BASE, "/futures/data/takerlongshortRatio", {"symbol": symbol, "period": "15m", "limit": 24}, False),
         "basis": (FUTURES_BASE, "/futures/data/basis", {"pair": symbol, "contractType": "PERPETUAL", "period": "15m", "limit": 24}, False),
     }
-    data, warnings = _parallel(tasks)
 
+
+def _fetch_crypto_relay(symbol: str) -> tuple[dict[str, Any], list[str]]:
+    payload = _request_json(CRYPTO_RELAY_BASE, "/api/crypto", {"symbol": symbol})
+    if not isinstance(payload, dict):
+        raise LiveDataError("EU relay returned an invalid payload")
+    data = payload.get("data")
+    warnings = payload.get("warnings")
+    if not isinstance(data, dict):
+        raise LiveDataError("EU relay returned no market data")
+    if not isinstance(warnings, list):
+        warnings = []
+    return data, [str(item) for item in warnings]
+
+
+def _normalize_crypto_data(
+    symbol: str,
+    data: dict[str, Any],
+    warnings: list[str],
+) -> tuple[dict[str, Any], list[str]]:
     ticker = data.get("spot ticker") if isinstance(data.get("spot ticker"), dict) else {}
     klines = data.get("spot klines") if isinstance(data.get("spot klines"), list) else []
     depth = data.get("spot depth") if isinstance(data.get("spot depth"), dict) else {}
+
     funding_payload = data.get("funding")
     if isinstance(funding_payload, list):
         funding = funding_payload[-1] if funding_payload and isinstance(funding_payload[-1], dict) else {}
@@ -185,6 +211,7 @@ def fetch_crypto_snapshot(symbol: str) -> tuple[dict[str, Any], list[str]]:
         funding = funding_payload
     else:
         funding = {}
+
     oi_hist = data.get("open interest history") if isinstance(data.get("open interest history"), list) else []
     global_ls = data.get("global long short") if isinstance(data.get("global long short"), list) else []
     top_ls = data.get("top trader positions") if isinstance(data.get("top trader positions"), list) else []
@@ -198,8 +225,16 @@ def fetch_crypto_snapshot(symbol: str) -> tuple[dict[str, Any], list[str]]:
 
     bids = depth.get("bids") or []
     asks = depth.get("asks") or []
-    bid_notional = sum((_float(row[0]) or 0) * (_float(row[1]) or 0) for row in bids[:20] if isinstance(row, list) and len(row) >= 2)
-    ask_notional = sum((_float(row[0]) or 0) * (_float(row[1]) or 0) for row in asks[:20] if isinstance(row, list) and len(row) >= 2)
+    bid_notional = sum(
+        (_float(row[0]) or 0) * (_float(row[1]) or 0)
+        for row in bids[:20]
+        if isinstance(row, list) and len(row) >= 2
+    )
+    ask_notional = sum(
+        (_float(row[0]) or 0) * (_float(row[1]) or 0)
+        for row in asks[:20]
+        if isinstance(row, list) and len(row) >= 2
+    )
     imbalance = bid_notional / ask_notional if ask_notional > 0 else None
 
     oi_values = [_float(item.get("sumOpenInterest")) for item in oi_hist if isinstance(item, dict)]
@@ -244,8 +279,25 @@ def fetch_crypto_snapshot(symbol: str) -> tuple[dict[str, Any], list[str]]:
 
     coverage = sum(value is not None for key, value in snapshot.items() if key != "symbol")
     if coverage < 5:
-        warnings.append("Live coverage is too limited for a high-quality investigation; use the validated example if this host cannot reach enough Binance market endpoints.")
+        warnings.append(
+            "Live coverage is too limited for a high-quality investigation; "
+            "use the validated example if this host cannot reach enough Binance market endpoints."
+        )
     return snapshot, warnings
+
+
+def fetch_crypto_snapshot(symbol: str) -> tuple[dict[str, Any], list[str]]:
+    symbol = symbol.strip().upper()
+    if symbol not in POPULAR_CRYPTO_SYMBOLS:
+        raise LiveDataError("Market Move Autopsy currently expects a supported USDT spot/perpetual symbol")
+
+    try:
+        data, warnings = _fetch_crypto_relay(symbol)
+    except Exception as relay_exc:
+        data, warnings = _parallel(_crypto_tasks(symbol))
+        warnings.insert(0, f"EU relay unavailable; direct Binance fallback used: {relay_exc}")
+
+    return _normalize_crypto_data(symbol, data, warnings)
 
 
 def fetch_tokenized_stock_list() -> list[dict[str, Any]]:
@@ -258,7 +310,11 @@ def fetch_tokenized_stock_list() -> list[dict[str, Any]]:
     rows = payload.get("data") if isinstance(payload, dict) else None
     if not isinstance(rows, list):
         raise LiveDataError("Tokenized stock list returned no data")
-    return [row for row in rows if isinstance(row, dict) and row.get("ticker") and row.get("contractAddress")]
+    return [
+        row
+        for row in rows
+        if isinstance(row, dict) and row.get("ticker") and row.get("contractAddress")
+    ]
 
 
 def _select_stock_deployment(rows: list[dict[str, Any]], ticker: str) -> dict[str, Any]:
@@ -280,7 +336,10 @@ def _status_label(overall: dict[str, Any]) -> str | None:
     return "closed" if overall.get("openState") is False else None
 
 
-def fetch_cross_market_snapshot(ticker: str, rows: list[dict[str, Any]] | None = None) -> tuple[dict[str, Any], list[str]]:
+def fetch_cross_market_snapshot(
+    ticker: str,
+    rows: list[dict[str, Any]] | None = None,
+) -> tuple[dict[str, Any], list[str]]:
     ticker = ticker.strip().upper()
     rows = rows or fetch_tokenized_stock_list()
     deployment = _select_stock_deployment(rows, ticker)
