@@ -21,7 +21,7 @@ st.set_page_config(
     page_title="MarketTruth AI",
     page_icon="🔎",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="locked",
 )
 
 st.markdown(
@@ -62,7 +62,7 @@ st.markdown(
     .mt-evidence{padding:1rem 1.1rem;min-height:260px}
     .mt-evidence h4{margin:0 0 .75rem;color:var(--mt-ink);font-size:1.05rem}
     .mt-evidence ul{margin:0;padding-left:1.15rem}.mt-evidence li{color:#344054;margin-bottom:.62rem;line-height:1.42}
-    .mt-empty{padding:1.2rem;border:1px dashed #d0d5dd;border-radius:14px;color:#667085;background:#fcfcfd;margin-top:1rem}
+    .mt-empty{padding:1.2rem;border:1px solid #b2ddff;border-left:4px solid #1570ef;border-radius:14px;color:#175cd3;background:#eff8ff;margin-top:1rem}
     .mt-footnote{color:#98a2b3;font-size:.78rem;margin-top:1.2rem}
     @media(max-width:900px){.mt-grid{grid-template-columns:1fr}.mt-title{font-size:2.35rem}.mt-agent,.mt-evidence{min-height:auto}}
     @media(max-width:640px){.block-container{padding-top:1.35rem;padding-left:1rem;padding-right:1rem}.mt-title{font-size:2rem}.mt-subtitle{font-size:.94rem}.mt-source,.mt-architecture,.mt-kpi,.mt-agent,.mt-evidence{padding:.85rem .9rem}.mt-live{margin-left:0}}
