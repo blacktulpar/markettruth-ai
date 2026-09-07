@@ -161,6 +161,7 @@ with st.sidebar:
                     try:
                         live_payload, live_warnings = fetch_crypto_snapshot(asset)
                         store_live(mode_key, live_payload, live_warnings, asset)
+                        st.success("Results ready. On mobile, tap ‹‹ above to view the analysis.")
                     except Exception as exc:
                         st.error(f"Live investigation failed: {exc}")
             if st.session_state.get(f"{mode_key}_asset") == asset:
@@ -194,6 +195,7 @@ with st.sidebar:
                     try:
                         live_payload, live_warnings = fetch_cross_market_snapshot(asset, rows or None)
                         store_live(mode_key, live_payload, live_warnings, asset)
+                        st.success("Results ready. On mobile, tap ‹‹ above to view the analysis.")
                     except Exception as exc:
                         st.error(f"Live investigation failed: {exc}")
             if st.session_state.get(f"{mode_key}_asset") == asset:
