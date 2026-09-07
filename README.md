@@ -36,7 +36,7 @@ No order placement, transfers, margin actions, loans or fund movement are requir
 
 ## Interactive public demo
 
-The Streamlit app now supports a real live workflow instead of only replaying saved snapshots.
+The Streamlit app supports a real live workflow instead of only replaying saved snapshots.
 
 Visitors can:
 
@@ -47,9 +47,11 @@ Visitors can:
 
 The public demo requires no Binance account or API key. It uses official read-only public Binance endpoints so visitors can interact with the project directly from the deployed app.
 
-For crypto, the public demo uses Binance public Spot and USDⓈ-M market endpoints to reproduce the same normalized evidence model used by the Binance MCP workflow. For tokenized stocks, it uses the public APIs documented by the official Binance Skills Hub tokenized-securities skill.
+For crypto, Streamlit sends a single request to a narrow read-only relay deployed on Vercel in Frankfurt (`fra1`). The relay fetches the required official Binance public Spot and USDⓈ-M market endpoints and returns the evidence payload to MarketTruth. It only accepts the supported MarketTruth symbols and fixed market-data endpoints; it does not accept arbitrary target URLs, credentials, trading actions or account operations. A direct Binance read-only path remains available as a fallback for local use or relay outages.
 
-The distinction is intentional and transparent: **the core Agent OS workflow was validated end to end through Binance MCP, while the public web demo uses official public Binance endpoints so external visitors can run the investigation without connecting an authenticated MCP session.**
+For tokenized stocks, the public demo uses the public APIs documented by the official Binance Skills Hub tokenized-securities skill.
+
+The distinction is intentional and transparent: **the core Agent OS workflow was validated end to end through Binance MCP, while the public web demo uses official public Binance endpoints so external visitors can run the investigation without connecting an authenticated MCP session.** The EU relay is a transport layer for public market data only; it does not replace the MarketTruth analysis workflow.
 
 Validated example snapshots remain available as an explicit fallback/demo mode.
 
@@ -107,7 +109,7 @@ https://markettruth-ai.streamlit.app/
 
 The sidebar contains the investigation mode, data source and asset selector. `Live Public Demo` performs a fresh read-only investigation; `Validated Example` reproduces the previously verified Agent OS results; `Upload Snapshot` accepts a normalized JSON snapshot.
 
-Deployment dependencies are provided in `requirements.txt`, and Streamlit theme settings are in `.streamlit/config.toml`.
+Deployment dependencies are provided in `requirements.txt`, Streamlit theme settings are in `.streamlit/config.toml`, and the restricted Frankfurt relay is implemented in `vercel-test/api/crypto.js`.
 
 ## Live Agent OS workflows
 
@@ -132,11 +134,19 @@ Cross Market Reality Check Skills Hub procedure:
                 v                                    v
        Market Move Autopsy                 Cross Market Reality Check
                 |                                    |
-        +-------+-------+                      PriceTruth analysis
-        |               |                            |
-        v               v                            v
- Spot specialist  Derivatives specialist     Session / event context
-        |               |                            |
+     Streamlit public demo                         Binance Web3
+                |                                    |
+                v                                    v
+   Frankfurt read-only relay                 PriceTruth analysis
+                |
+                v
+       Binance public Spot + USDⓈ-M
+                |
+        +-------+-------+
+        |               |
+        v               v
+ Spot specialist  Derivatives specialist
+        |               |
         +-------+-------+----------------------------+
                 |
                 v
@@ -146,11 +156,15 @@ Cross Market Reality Check Skills Hub procedure:
    Classification + risk + confidence + evidence
 ```
 
+The validated Agent OS crypto workflow follows the same normalized evidence model, with Binance MCP as the collection layer instead of the public relay.
+
 ## Validated live runs
 
 ### BTCUSDT Market Move Autopsy
 
 The first end-to-end BTCUSDT run completed with **10/10 read-only Binance MCP calls succeeding**. The live snapshot produced a useful disagreement: top-trader positioning favored longs while taker flow was sell-dominant. MarketTruth surfaced this as `CONFLICT DETECTED` and classified the overall state as `MIXED_OR_INCONCLUSIVE` with **85/100 Truth confidence** and **15/100 Trap Risk**.
+
+The public crypto path was also validated through the Frankfurt relay with all required Spot and USDⓈ-M evidence groups returned and no collection warnings.
 
 ### NVDA Cross Market Reality Check
 
@@ -171,6 +185,7 @@ MarketTruth returned `NORMAL_TRACKING_RANGE` with **86/100 confidence**. Because
 - both investigation modes implemented
 - interactive live public data collector added
 - first live BTCUSDT and NVDA Agent OS workflows verified
-- deterministic analyzers covered by tests
+- Frankfurt relay validated for public Spot and USDⓈ-M access
+- deterministic analyzers and relay-backed live normalization covered by **14 passing tests**
 - Streamlit dashboard and validated example mode implemented
 - no raw live MCP/API responses committed
