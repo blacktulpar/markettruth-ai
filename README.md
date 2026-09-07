@@ -27,12 +27,31 @@ MarketTruth does not stop at price direction or a generic buy/sell signal. It in
 
 ## Binance Agent OS sources
 
-The project uses two official parts of the Binance Agent OS ecosystem:
+The core project uses two official parts of the Binance Agent OS ecosystem:
 
-- **Binance MCP** for spot and USDⓈ-M derivatives evidence
+- **Binance MCP** for the validated Market Move Autopsy workflow
 - **Binance Skills Hub** for the tokenized-securities workflow used by Cross Market Reality Check
 
-No order placement, transfers, margin actions, loans or fund movement are required by the MVP.
+No order placement, transfers, margin actions, loans or fund movement are required.
+
+## Interactive public demo
+
+The Streamlit app now supports a real live workflow instead of only replaying saved snapshots.
+
+Visitors can:
+
+1. choose **Market Move Autopsy** or **Cross Market Reality Check**
+2. select a crypto asset or supported tokenized stock
+3. press **Run Live Investigation**
+4. receive a fresh MarketTruth classification, risk score, confidence score and evidence breakdown
+
+The public demo requires no Binance account or API key. It uses official read-only public Binance endpoints so visitors can interact with the project directly from the deployed app.
+
+For crypto, the public demo uses Binance public Spot and USDⓈ-M market endpoints to reproduce the same normalized evidence model used by the Binance MCP workflow. For tokenized stocks, it uses the public APIs documented by the official Binance Skills Hub tokenized-securities skill.
+
+The distinction is intentional and transparent: **the core Agent OS workflow was validated end to end through Binance MCP, while the public web demo uses official public Binance endpoints so external visitors can run the investigation without connecting an authenticated MCP session.**
+
+Validated example snapshots remain available as an explicit fallback/demo mode.
 
 ## Market Move Autopsy evidence
 
@@ -45,7 +64,7 @@ Spot:
 USDⓈ-M derivatives:
 
 - funding / mark price
-- open interest and historical OI
+- historical open interest
 - global long/short ratio
 - top-trader position ratio
 - taker buy/sell volume
@@ -82,49 +101,49 @@ python -m pytest -q
 python -m streamlit run streamlit_app.py
 ```
 
-The sidebar switches between both investigation modes and accepts normalized JSON snapshots.
+## Public demo
 
-## Public demo behavior
+https://markettruth-ai.streamlit.app/
 
-Local live snapshots under `data/live/` are intentionally excluded from GitHub. The dashboard automatically prefers local live snapshots when present; otherwise it falls back to the validated example snapshots under `data/examples/` so a public deployment opens with reproducible demo data.
+The sidebar contains the investigation mode, data source and asset selector. `Live Public Demo` performs a fresh read-only investigation; `Validated Example` reproduces the previously verified Agent OS results; `Upload Snapshot` accepts a normalized JSON snapshot.
 
 Deployment dependencies are provided in `requirements.txt`, and Streamlit theme settings are in `.streamlit/config.toml`.
 
-## Live workflows
+## Live Agent OS workflows
 
-Market Move Autopsy collection procedure:
+Market Move Autopsy MCP collection procedure:
 
 `prompts/market_move_autopsy.md`
 
-Cross Market Reality Check collection procedure:
+Cross Market Reality Check Skills Hub procedure:
 
 `prompts/cross_market_reality_check.md`
 
 ## Architecture
 
 ```text
-                         User question
-                              |
-                              v
-                       Orchestrator / Codex
-                              |
-              +---------------+---------------+
-              |                               |
-              v                               v
-      Market Move Autopsy            Cross Market Reality Check
-              |                               |
-      +-------+-------+                 PriceTruth analysis
-      |               |                       |
-      v               v                       v
- Spot specialist  Derivatives specialist  Session / event context
-      |               |                       |
-      +-------+-------+-----------------------+
-              |
-              v
-        Truth / Synthesis
-              |
-              v
-    Classification + risk + evidence
+                         User / selected asset
+                                  |
+                                  v
+                         Investigation mode
+                                  |
+                +-----------------+------------------+
+                |                                    |
+                v                                    v
+       Market Move Autopsy                 Cross Market Reality Check
+                |                                    |
+        +-------+-------+                      PriceTruth analysis
+        |               |                            |
+        v               v                            v
+ Spot specialist  Derivatives specialist     Session / event context
+        |               |                            |
+        +-------+-------+----------------------------+
+                |
+                v
+          Truth / Synthesis
+                |
+                v
+   Classification + risk + confidence + evidence
 ```
 
 ## Validated live runs
@@ -150,8 +169,8 @@ MarketTruth returned `NORMAL_TRACKING_RANGE` with **86/100 confidence**. Because
 ## Validation status
 
 - both investigation modes implemented
-- first live BTCUSDT and NVDA workflows verified
-- **11 tests passing**
-- Streamlit AppTest passing for both modes
-- validated example snapshots reproduce the live conclusions
+- interactive live public data collector added
+- first live BTCUSDT and NVDA Agent OS workflows verified
+- deterministic analyzers covered by tests
+- Streamlit dashboard and validated example mode implemented
 - no raw live MCP/API responses committed
