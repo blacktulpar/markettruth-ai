@@ -6,15 +6,19 @@ MarketTruth AI is a read-only multi-agent market investigation prototype built f
 
 ## Investigation modes
 
-### 1. Market Move Autopsy
+### Mode 01: Crypto
+**Workflow: Market Move Autopsy**
+
 Explain *why* a crypto asset is moving by comparing spot market structure with derivatives positioning.
 
-### 2. Cross Market Reality Check
+### Mode 02: Tokenized Stocks
+**Workflow: Cross Market Reality Check**
+
 Investigate tokenized US stock pricing by correcting for the token-to-share multiplier, comparing the adjusted token reference with the underlying stock when available, and checking market-session or corporate-action context.
 
-## Three layer architecture
+## Shared three layer architecture
 
-MarketTruth separates AI orchestration, official Binance evidence, and deterministic analysis into three layers.
+MarketTruth separates AI orchestration, official Binance evidence, and deterministic analysis into three shared layers used across the project.
 
 ### 1. Codex AI orchestration
 
@@ -24,8 +28,8 @@ Codex orchestrates the validated Agent OS workflow: it follows the investigation
 
 The project uses official Binance Agent OS ecosystem components:
 
-- **Binance MCP** for the validated Market Move Autopsy workflow
-- **Binance Skills Hub** for the tokenized-securities workflow used by Cross Market Reality Check
+- **Binance MCP** for the validated Crypto / Market Move Autopsy workflow
+- **Binance Skills Hub** for the tokenized-securities workflow used by Tokenized Stocks / Cross Market Reality Check
 
 ### 3. MarketTruth deterministic analysis
 
@@ -92,7 +96,7 @@ https://markettruth-ai.streamlit.app/
 
 Visitors can:
 
-1. choose **Market Move Autopsy** or **Cross Market Reality Check**
+1. choose **Crypto** or **Tokenized Stocks**
 2. select a crypto asset or supported tokenized stock
 3. press **Run Live Investigation**
 4. receive a fresh MarketTruth classification, risk score, confidence score and evidence breakdown
@@ -100,11 +104,11 @@ Visitors can:
 
 The public demo requires no Binance account or API key.
 
-For crypto, Streamlit sends a single request to a narrow read-only relay deployed on Vercel in Frankfurt (`fra1`). The relay fetches the required official Binance public Spot and USDⓈ-M market endpoints and returns the evidence payload to MarketTruth. It only accepts the supported MarketTruth symbols and fixed market-data endpoints; it does not accept arbitrary target URLs, credentials, trading actions or account operations. A direct Binance read-only path remains available as a fallback for local use or relay outages.
+For Crypto, the public demo uses official Binance public Spot and USDⓈ-M market data through a restricted read-only transport path. It supports only the fixed MarketTruth symbols and market-data endpoints and does not expose credentials, arbitrary target URLs, trading actions or account operations.
 
-For tokenized stocks, the public demo uses the public APIs documented by the official Binance Skills Hub tokenized-securities skill.
+For Tokenized Stocks, the public demo uses the public APIs documented by the official Binance Skills Hub tokenized-securities skill.
 
-The EU relay is a transport layer for public market data only; it does not replace the MarketTruth analysis workflow.
+The transport layer only solves public-data reachability. It does not replace the MarketTruth analysis workflow.
 
 Validated example snapshots remain available as an explicit fallback and reproduction mode.
 
@@ -195,15 +199,15 @@ python -m streamlit run streamlit_app.py
 
 The sidebar contains the investigation mode, data source and asset selector. `Live Public Demo` performs a fresh read-only investigation; `Validated Example` reproduces previously verified evidence; `Upload Snapshot` accepts a normalized JSON snapshot.
 
-Deployment dependencies are provided in `requirements.txt`, Streamlit theme settings are in `.streamlit/config.toml`, and the restricted Frankfurt relay is implemented in `vercel-test/api/crypto.js`.
+Deployment dependencies are provided in `requirements.txt`, Streamlit theme settings are in `.streamlit/config.toml`, and the restricted read-only crypto relay is implemented in `vercel-test/api/crypto.js`.
 
 ## Live Agent OS workflows
 
-Market Move Autopsy MCP collection procedure:
+Crypto / Market Move Autopsy MCP collection procedure:
 
 `prompts/market_move_autopsy.md`
 
-Cross Market Reality Check Skills Hub procedure:
+Tokenized Stocks / Cross Market Reality Check Skills Hub procedure:
 
 `prompts/cross_market_reality_check.md`
 
@@ -243,13 +247,13 @@ Cross Market Reality Check Skills Hub procedure:
 
 ## Validated live runs
 
-### BTCUSDT Market Move Autopsy
+### BTCUSDT — Crypto / Market Move Autopsy
 
 The first end-to-end BTCUSDT run completed with **10/10 read-only Binance MCP calls succeeding**. The live snapshot produced a useful disagreement: top-trader positioning favored longs while taker flow was sell-dominant. MarketTruth surfaced this as `CONFLICT DETECTED` and classified the overall state as `MIXED_OR_INCONCLUSIVE` with **85/100 Truth confidence** and **15/100 Trap Risk**.
 
-The public crypto path was also validated through the Frankfurt relay with all required Spot and USDⓈ-M evidence groups returned and no collection warnings.
+The public Crypto path was also validated with all required Spot and USDⓈ-M evidence groups returned and no collection warnings.
 
-### NVDA Cross Market Reality Check
+### NVDA — Tokenized Stocks / Cross Market Reality Check
 
 The first NVDA run completed successfully through the official Binance tokenized-securities skill and documented public Binance APIs.
 
@@ -265,12 +269,12 @@ MarketTruth returned `NORMAL_TRACKING_RANGE` with **86/100 confidence**. Because
 
 ## Validation status
 
-- both investigation modes implemented
-- three-layer architecture documented explicitly
+- both investigation modes implemented: **Crypto** and **Tokenized Stocks**
+- shared three-layer architecture documented explicitly
 - interactive live public data collector added
 - first live BTCUSDT and NVDA Agent OS ecosystem workflows verified
-- Frankfurt relay validated for public Spot and USDⓈ-M access
-- deterministic analyzers and relay-backed live normalization covered by **14 passing tests**
+- public Crypto data path validated for Spot and USDⓈ-M evidence
+- deterministic analyzers and live normalization covered by **14 passing tests**
 - Streamlit dashboard, How It Works page and validated example mode implemented
 - detailed interpretation guides added for both investigation modes
 - no raw live MCP/API responses committed
