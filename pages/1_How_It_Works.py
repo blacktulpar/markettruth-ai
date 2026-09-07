@@ -43,7 +43,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.subheader("Three layer architecture")
+st.subheader("Shared three layer architecture")
 st.markdown(
     """
     <div class="mt-flow">
@@ -88,7 +88,7 @@ mode_a, mode_b = st.columns(2)
 with mode_a:
     st.markdown(
         """
-        <div class="mt-card"><strong>Market Move Autopsy</strong><br><br>
+        <div class="mt-card"><strong>Crypto</strong><br><span class="mt-small">Market Move Autopsy</span><br><br>
         Compares spot market structure with derivatives positioning to investigate what may be driving a crypto move. It surfaces disagreement instead of hiding it inside one score.</div>
         """,
         unsafe_allow_html=True,
@@ -96,7 +96,7 @@ with mode_a:
 with mode_b:
     st.markdown(
         """
-        <div class="mt-card"><strong>Cross Market Reality Check</strong><br><br>
+        <div class="mt-card"><strong>Tokenized Stocks</strong><br><span class="mt-small">Cross Market Reality Check</span><br><br>
         Normalizes tokenized US stock prices by the shares multiplier, compares the adjusted reference with the underlying stock, and checks session or asset specific context before interpreting a visible gap.</div>
         """,
         unsafe_allow_html=True,
@@ -140,7 +140,7 @@ st.markdown(
 st.subheader("Evidence first, claims second")
 st.markdown(
     """
-    MarketTruth is intentionally conservative about evidence it cannot observe. Missing data remains missing. The Market Move workflow does not claim a confirmed liquidation cascade without a liquidation event feed, and the Cross Market workflow never calls a visible price gap actionable arbitrage from price difference alone.
+    MarketTruth is intentionally conservative about evidence it cannot observe. Missing data remains missing. The Crypto workflow does not claim a confirmed liquidation cascade without a liquidation event feed, and the Tokenized Stocks workflow never calls a visible price gap actionable arbitrage from price difference alone.
 
     The demonstrated workflows are fully **read only**. No orders, transfers, margin actions, loans, or fund movement are required.
     """
