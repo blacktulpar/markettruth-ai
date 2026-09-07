@@ -24,11 +24,17 @@ st.markdown(
     .mt-flow{padding:1rem 1.2rem;border:1px solid #e8cf72;border-left:4px solid var(--mt-yellow);border-radius:12px;background:#fffdf5;margin:1rem 0 1.5rem;line-height:1.7}
     .mt-note{padding:.9rem 1rem;border:1px solid var(--mt-line);border-radius:12px;background:#f8fafc;color:#475467;margin:.7rem 0 1rem}
     .mt-small{color:var(--mt-muted);font-size:.88rem;line-height:1.55}
-    @media(max-width:900px){.mt-title{font-size:2.25rem}}
+    @media(max-width:900px){.mt-title{font-size:2.25rem}.mt-card{min-height:auto}}
+    @media(max-width:640px){.block-container{padding-top:1.35rem;padding-left:1rem;padding-right:1rem}.mt-title{font-size:2rem}.mt-subtitle{font-size:.94rem}.mt-flow,.mt-note,.mt-card{padding:.85rem .9rem}}
     </style>
     """,
     unsafe_allow_html=True,
 )
+
+with st.sidebar:
+    st.page_link("streamlit_app.py", label="Investigate Now")
+    st.page_link("pages/1_How_It_Works.py", label="How It Works")
+    st.divider()
 
 st.markdown('<span class="mt-badge">MARKETTRUTH AI • EXPLAINER</span>', unsafe_allow_html=True)
 st.markdown('<div class="mt-title">How It Works</div>', unsafe_allow_html=True)
@@ -51,7 +57,7 @@ st.markdown(
 
 st.markdown(
     """
-    <div class="mt-note"><strong>Why deterministic analysis?</strong> The AI does not receive raw numbers and invent a black box verdict. MarketTruth calculates auditable metrics and applies transparent rules first, then the validated agent workflow can explain the most important cross signal relationships.</div>
+    <div class="mt-note"><strong>Why deterministic analysis?</strong> The AI is not asked to invent a black box verdict directly from raw market data. MarketTruth calculates auditable metrics and applies transparent rules first, then the validated agent workflow can explain the most important cross signal relationships.</div>
     """,
     unsafe_allow_html=True,
 )
@@ -72,7 +78,7 @@ with right:
         """
         <div class="mt-card"><strong>Live Public Demo</strong><br><br>
         Visitors can run fresh investigations without a Binance account or authenticated MCP connection. The public app uses official read only Binance data and sends it through the same deterministic MarketTruth analysis engine.<br><br>
-        <span class="mt-small">The public demo does not pretend to run inside the project's Codex or authenticated Binance session.</span></div>
+        <span class="mt-small">The public demo does not pretend to run Codex or an authenticated Binance MCP session.</span></div>
         """,
         unsafe_allow_html=True,
     )
