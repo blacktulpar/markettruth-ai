@@ -21,7 +21,7 @@ def test_crypto_live_normalization(monkeypatch) -> None:
         "basis": [{"basisRate": "-0.0003", "timestamp": 9994}],
     }
 
-    monkeypatch.setattr(live_public, "_parallel", lambda tasks: (fake, []))
+    monkeypatch.setattr(live_public, "_fetch_crypto_relay", lambda symbol: (fake, []))
     snapshot, warnings = live_public.fetch_crypto_snapshot("btcusdt")
 
     assert snapshot["symbol"] == "BTCUSDT"
