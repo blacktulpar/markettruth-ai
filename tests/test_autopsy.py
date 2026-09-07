@@ -81,3 +81,20 @@ def test_top_trader_vs_taker_flow_conflict_is_surfaced() -> None:
 
     assert result.truth.classification == "MIXED_OR_INCONCLUSIVE"
     assert any("Top-trader positions favor longs" in item for item in result.truth.conflicts)
+
+
+def test_missing_derivatives_are_not_presented_as_neutral_signal() -> None:
+    snapshot = MarketSnapshot(
+        symbol="BTCUSDT",
+        price_change_1h=-0.8,
+        price_change_4h=-1.6,
+        price_change_24h=-3.2,
+        orderbook_imbalance=0.82,
+        quote_volume_24h=100_000_000,
+    )
+
+    result = analyze_snapshot(snapshot)
+
+    assert result.derivatives.bias == "n/a"
+    assert result.derivatives.confidence == 0
+    assert any("Derivatives evidence unavailable" in warning for warning in result.truth.warnings)
